@@ -150,9 +150,6 @@ ankle_equilibrium_angle.png
 │   ├── AB_refs.mat
 │   ├── RBF_models.mat
 │   └── README.md
-├── legacy/
-│   ├── TRO_AB_Ankle_LSQ_allslopes_stanceseparated_fromDeanDat_v2_2.m
-│   └── TRO_AB_Knee_LSQ_allslopes_stanceseparated_fromJCDat_v2_2.m
 ├── outputs/
 └── src/
     ├── bounds/
