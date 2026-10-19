@@ -9,7 +9,7 @@ The package takes continuous able-bodied joint-angle and joint-moment surfaces a
 For each joint and terrain slope, the stance-phase moment is reconstructed using
 
 ```text
-M = K (theta - theta_eq) + B theta_dot
+M = -K (theta - theta_eq) - B theta_dot
 ```
 
 where `K` and `B` are represented as fourth-order polynomials of normalized stance phase. The parameterization pipeline:
