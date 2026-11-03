@@ -1,0 +1,13 @@
+Joint,TerrainGroup,PhaseRegion,R2Method,NSlopes,MeanR2,StdR2,MeanPlusMinusStd
+Knee,LW + Ascent,Overall,unaligned,9,0.943458031009523,0.0396838456456684,0.94 ± 0.04
+Knee,LW + Ascent,ES,phase_aligned,9,0.982252257465747,0.00689543607509378,0.98 ± 0.01
+Knee,LW + Ascent,LS,phase_aligned,9,0.831549738891739,0.15070414949199,0.83 ± 0.15
+Knee,Descent,Overall,unaligned,8,0.276659040797518,0.254429266650321,0.28 ± 0.25
+Knee,Descent,ES,phase_aligned,8,0.323144968900191,0.356709510958467,0.32 ± 0.36
+Knee,Descent,LS,phase_aligned,8,0.72600900289389,0.210377080026768,0.73 ± 0.21
+Ankle,LW + Ascent,Overall,unaligned,9,0.777508508266962,0.130944022510611,0.78 ± 0.13
+Ankle,LW + Ascent,ES,phase_aligned,9,0.672312433198475,0.188478922960699,0.67 ± 0.19
+Ankle,LW + Ascent,LS,phase_aligned,9,0.837270236528609,0.104326038528536,0.84 ± 0.10
+Ankle,Descent,Overall,unaligned,8,0.484542582822143,0.285314624697926,0.48 ± 0.29
+Ankle,Descent,ES,phase_aligned,8,0.12657196824136,0.0832698455474679,0.13 ± 0.08
+Ankle,Descent,LS,phase_aligned,8,0.906698763195496,0.0279486783478641,0.91 ± 0.03

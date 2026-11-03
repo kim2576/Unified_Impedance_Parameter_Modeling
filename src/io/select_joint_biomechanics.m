@@ -8,10 +8,11 @@ Output orientation follows the legacy impedance scripts:
 
 jointData contains:
   angle             [71 x 100] deg
-  angular_velocity  [71 x 100] deg/s (legacy conversion preserved)
+  angular_velocity  [71 x 100] deg/s (selected preprocessed RBF field)
   moment            [71 x 100] Nm/kg
   swing_angle       [71 x 100] deg, ankle only (empty for knee)
   reference_moment  [17 x 101] Nm/kg
+  angular_velocity_field  Source RBF field name
 %}
 
 arguments
@@ -20,7 +21,7 @@ arguments
 end
 
 requiredInputFields = {'RBF_model','AB_ref','slope','stance_phase', ...
-    'reference_slope','reference_stance_phase'};
+    'reference_slope','reference_stance_phase','angular_velocity_variant'};
 for i = 1:numel(requiredInputFields)
     if ~isfield(inputs, requiredInputFields{i})
         error('select_joint_biomechanics:InvalidInputs', ...
@@ -31,28 +32,42 @@ end
 jointChar = char(joint);
 angleField = [jointChar '_angle_stance'];
 momentField = [jointChar '_moment_stance'];
+switch inputs.angular_velocity_variant
+    case "original"
+        velocityField = [jointChar '_angle_dot_stance'];
+    case "norm"
+        velocityField = [jointChar '_angle_dot_stance_norm'];
+    otherwise
+        error('select_joint_biomechanics:UnknownVelocityVariant', ...
+            'Unsupported angular velocity variant: %s.', ...
+            inputs.angular_velocity_variant);
+end
 refMomentField = ['avg_' jointChar '_moment_stance_total'];
 
 assertRBFField(inputs.RBF_model, angleField);
 assertRBFField(inputs.RBF_model, momentField);
+assertRBFField(inputs.RBF_model, velocityField);
 if ~isfield(inputs.AB_ref, refMomentField)
     error('select_joint_biomechanics:MissingReferenceField', ...
         'Missing AB reference field: %s', refMomentField);
 end
 
 % Preserve the exact orientation/cropping used by the legacy scripts.
-angleFull = inputs.RBF_model.(angleField).RBF_in_full_domain';
 angle = inputs.RBF_model.(angleField).RBF_in_full_domain(1:100, :)';
 moment = inputs.RBF_model.(momentField).RBF_in_full_domain(1:100, :)';
 
-% Preserve the existing phase-to-time conversion exactly for Step 1.
-% Refactoring or revisiting this conversion is intentionally deferred.
-angularVelocity = diff(angleFull')' * 100/60 * 100;
+% Angular velocity is an independently modeled RBF surface, constructed
+% upstream from the preprocessed velocity measurements (or '_norm' inputs).
+% Keep the established first-100-sample selection used by angle and moment.
+% Do NOT recompute it by differentiating the fitted joint-angle surface.
+angularVelocity = inputs.RBF_model.(velocityField).RBF_in_full_domain(1:100, :)';
 
 jointData = struct();
 jointData.joint = joint;
 jointData.angle = angle;
 jointData.angular_velocity = angularVelocity;
+jointData.angular_velocity_field = string(velocityField);
+jointData.angular_velocity_variant = inputs.angular_velocity_variant;
 jointData.moment = moment;
 jointData.swing_angle = [];
 

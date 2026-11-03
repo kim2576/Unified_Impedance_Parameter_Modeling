@@ -1,0 +1,121 @@
+ES_end,EvaluationES_end,EvaluationWindow,Joint,TerrainGroup,PhaseRegion,R2Method,NSlopes,MeanR2,StdR2
+50,50,native,ankle,LW + Ascent,Overall,phase_aligned,9,0.712115404235002,0.214027995788048
+50,50,native,ankle,LW + Ascent,Overall,unaligned,9,0.712115404235002,0.214027995788048
+50,50,native,ankle,LW + Ascent,ES,phase_aligned,9,0.700466255810063,0.214473519465087
+50,50,native,ankle,LW + Ascent,ES,unaligned,9,0.693075790000545,0.206861118415548
+50,50,native,ankle,LW + Ascent,LS,phase_aligned,9,0.794746550301042,0.130601842908115
+50,50,native,ankle,LW + Ascent,LS,unaligned,9,0.619617020724421,0.310436463742568
+50,50,native,ankle,Descent,Overall,phase_aligned,8,0.476157039604686,0.297145695239137
+50,50,native,ankle,Descent,Overall,unaligned,8,0.476157039604686,0.297145695239137
+50,50,native,ankle,Descent,ES,phase_aligned,8,0.118472994756432,0.117803178905932
+50,50,native,ankle,Descent,ES,unaligned,8,0.118472994756432,0.117803178905932
+50,50,native,ankle,Descent,LS,phase_aligned,8,0.865000886249046,0.0797315996531711
+50,50,native,ankle,Descent,LS,unaligned,8,0.86305841958539,0.0779256476033057
+50,55,fixed,ankle,LW + Ascent,Overall,phase_aligned,9,0.712115404235002,0.214027995788048
+50,55,fixed,ankle,LW + Ascent,Overall,unaligned,9,0.712115404235002,0.214027995788048
+50,55,fixed,ankle,LW + Ascent,ES,phase_aligned,9,0.719502173114378,0.163370137364154
+50,55,fixed,ankle,LW + Ascent,ES,unaligned,9,0.719502173114378,0.163370137364154
+50,55,fixed,ankle,LW + Ascent,LS,phase_aligned,9,0.776405689216571,0.15594714443181
+50,55,fixed,ankle,LW + Ascent,LS,unaligned,9,0.605296414303475,0.343924781692322
+50,55,fixed,ankle,Descent,Overall,phase_aligned,8,0.476157039604686,0.297145695239137
+50,55,fixed,ankle,Descent,Overall,unaligned,8,0.476157039604686,0.297145695239137
+50,55,fixed,ankle,Descent,ES,phase_aligned,8,0.117056741527144,0.0713952979665091
+50,55,fixed,ankle,Descent,ES,unaligned,8,0.117056741527144,0.0713952979665091
+50,55,fixed,ankle,Descent,LS,phase_aligned,8,0.893095731556209,0.0930183779032124
+50,55,fixed,ankle,Descent,LS,unaligned,8,0.893095731556209,0.0930183779032124
+55,55,native,ankle,LW + Ascent,Overall,phase_aligned,9,0.77750839322531,0.130944168288887
+55,55,native,ankle,LW + Ascent,Overall,unaligned,9,0.77750839322531,0.130944168288887
+55,55,native,ankle,LW + Ascent,ES,phase_aligned,9,0.672312433198475,0.188478922960699
+55,55,native,ankle,LW + Ascent,ES,unaligned,9,0.652975728173032,0.164506036268449
+55,55,native,ankle,LW + Ascent,LS,phase_aligned,9,0.837270112816827,0.104326161904146
+55,55,native,ankle,LW + Ascent,LS,unaligned,9,0.721577468835268,0.220543101939411
+55,55,native,ankle,Descent,Overall,phase_aligned,8,0.48455148310561,0.285315239177637
+55,55,native,ankle,Descent,Overall,unaligned,8,0.48455148310561,0.285315239177637
+55,55,native,ankle,Descent,ES,phase_aligned,8,0.12657196824136,0.0832698455474679
+55,55,native,ankle,Descent,ES,unaligned,8,0.12657196824136,0.0832698455474679
+55,55,native,ankle,Descent,LS,phase_aligned,8,0.906759039369098,0.0278531083060888
+55,55,native,ankle,Descent,LS,unaligned,8,0.902894917463111,0.0254592916027307
+55,55,fixed,ankle,LW + Ascent,Overall,phase_aligned,9,0.77750839322531,0.130944168288887
+55,55,fixed,ankle,LW + Ascent,Overall,unaligned,9,0.77750839322531,0.130944168288887
+55,55,fixed,ankle,LW + Ascent,ES,phase_aligned,9,0.672312433198475,0.188478922960699
+55,55,fixed,ankle,LW + Ascent,ES,unaligned,9,0.652975728173032,0.164506036268449
+55,55,fixed,ankle,LW + Ascent,LS,phase_aligned,9,0.837270112816827,0.104326161904146
+55,55,fixed,ankle,LW + Ascent,LS,unaligned,9,0.721577468835268,0.220543101939411
+55,55,fixed,ankle,Descent,Overall,phase_aligned,8,0.48455148310561,0.285315239177637
+55,55,fixed,ankle,Descent,Overall,unaligned,8,0.48455148310561,0.285315239177637
+55,55,fixed,ankle,Descent,ES,phase_aligned,8,0.12657196824136,0.0832698455474679
+55,55,fixed,ankle,Descent,ES,unaligned,8,0.12657196824136,0.0832698455474679
+55,55,fixed,ankle,Descent,LS,phase_aligned,8,0.906759039369098,0.0278531083060888
+55,55,fixed,ankle,Descent,LS,unaligned,8,0.902894917463111,0.0254592916027307
+60,60,native,ankle,LW + Ascent,Overall,phase_aligned,9,0.797300644442493,0.0528006884081769
+60,60,native,ankle,LW + Ascent,Overall,unaligned,9,0.797300644442493,0.0528006884081769
+60,60,native,ankle,LW + Ascent,ES,phase_aligned,9,0.63247050197047,0.21335561249303
+60,60,native,ankle,LW + Ascent,ES,unaligned,9,0.594782217638555,0.172765276247488
+60,60,native,ankle,LW + Ascent,LS,phase_aligned,9,0.87140522244922,0.0499367575207188
+60,60,native,ankle,LW + Ascent,LS,unaligned,9,0.806541525480283,0.090200947913951
+60,60,native,ankle,Descent,Overall,phase_aligned,8,0.470773324292045,0.271493021313914
+60,60,native,ankle,Descent,Overall,unaligned,8,0.470773324292045,0.271493021313914
+60,60,native,ankle,Descent,ES,phase_aligned,8,0.167337468690341,0.108003712898932
+60,60,native,ankle,Descent,ES,unaligned,8,0.167337468690341,0.108003712898932
+60,60,native,ankle,Descent,LS,phase_aligned,8,0.91133447491876,0.0415546503697068
+60,60,native,ankle,Descent,LS,unaligned,8,0.905415434061958,0.04949913531792
+60,55,fixed,ankle,LW + Ascent,Overall,phase_aligned,9,0.797300644442493,0.0528006884081769
+60,55,fixed,ankle,LW + Ascent,Overall,unaligned,9,0.797300644442493,0.0528006884081769
+60,55,fixed,ankle,LW + Ascent,ES,phase_aligned,9,0.66646792076751,0.191399579989587
+60,55,fixed,ankle,LW + Ascent,ES,unaligned,9,0.640718758942555,0.160302096986758
+60,55,fixed,ankle,LW + Ascent,LS,phase_aligned,9,0.866905848365309,0.0388696170627559
+60,55,fixed,ankle,LW + Ascent,LS,unaligned,9,0.793573443720391,0.0964316373064677
+60,55,fixed,ankle,Descent,Overall,phase_aligned,8,0.470773324292045,0.271493021313914
+60,55,fixed,ankle,Descent,Overall,unaligned,8,0.470773324292045,0.271493021313914
+60,55,fixed,ankle,Descent,ES,phase_aligned,8,0.125939533341377,0.0821986210775708
+60,55,fixed,ankle,Descent,ES,unaligned,8,0.125939533341377,0.0821986210775708
+60,55,fixed,ankle,Descent,LS,phase_aligned,8,0.893723387173658,0.0405129618699851
+60,55,fixed,ankle,Descent,LS,unaligned,8,0.874510730349159,0.0628780470851029
+65,65,native,ankle,LW + Ascent,Overall,phase_aligned,9,0.716836230522507,0.058634639366463
+65,65,native,ankle,LW + Ascent,Overall,unaligned,9,0.716836230522507,0.058634639366463
+65,65,native,ankle,LW + Ascent,ES,phase_aligned,9,0.570939069831875,0.248660297004761
+65,65,native,ankle,LW + Ascent,ES,unaligned,9,0.516963918674768,0.20841836053624
+65,65,native,ankle,LW + Ascent,LS,phase_aligned,9,0.867966630110584,0.0738704618643532
+65,65,native,ankle,LW + Ascent,LS,unaligned,9,0.793969316153588,0.152694415010836
+65,65,native,ankle,Descent,Overall,phase_aligned,8,0.435551248970758,0.246837844002331
+65,65,native,ankle,Descent,Overall,unaligned,8,0.435551248970758,0.246837844002331
+65,65,native,ankle,Descent,ES,phase_aligned,8,0.23020857434731,0.211124766154549
+65,65,native,ankle,Descent,ES,unaligned,8,0.23020857434731,0.211124766154549
+65,65,native,ankle,Descent,LS,phase_aligned,8,0.858676024245631,0.090807532107799
+65,65,native,ankle,Descent,LS,unaligned,8,0.852537827554269,0.0981328832433701
+65,55,fixed,ankle,LW + Ascent,Overall,phase_aligned,9,0.716836230522507,0.058634639366463
+65,55,fixed,ankle,LW + Ascent,Overall,unaligned,9,0.716836230522507,0.058634639366463
+65,55,fixed,ankle,LW + Ascent,ES,phase_aligned,9,0.657882083996549,0.192594654615178
+65,55,fixed,ankle,LW + Ascent,ES,unaligned,9,0.627680702717909,0.156323767106934
+65,55,fixed,ankle,LW + Ascent,LS,phase_aligned,9,0.843899292019742,0.0944836793127021
+65,55,fixed,ankle,LW + Ascent,LS,unaligned,9,0.748022632970496,0.214508170649671
+65,55,fixed,ankle,Descent,Overall,phase_aligned,8,0.435551248970758,0.246837844002331
+65,55,fixed,ankle,Descent,Overall,unaligned,8,0.435551248970758,0.246837844002331
+65,55,fixed,ankle,Descent,ES,phase_aligned,8,0.12556888086597,0.0820067155521347
+65,55,fixed,ankle,Descent,ES,unaligned,8,0.12556888086597,0.0820067155521347
+65,55,fixed,ankle,Descent,LS,phase_aligned,8,0.845408607933554,0.0853374996197673
+65,55,fixed,ankle,Descent,LS,unaligned,8,0.800492444394273,0.132961778611995
+70,70,native,ankle,LW + Ascent,Overall,phase_aligned,9,0.499977370192687,0.0428035219818176
+70,70,native,ankle,LW + Ascent,Overall,unaligned,9,0.499977370192687,0.0428035219818176
+70,70,native,ankle,LW + Ascent,ES,phase_aligned,9,0.470924262303134,0.26656386055447
+70,70,native,ankle,LW + Ascent,ES,unaligned,9,0.40489751436691,0.24576796353819
+70,70,native,ankle,LW + Ascent,LS,phase_aligned,9,0.782037160469666,0.1131154697877
+70,70,native,ankle,LW + Ascent,LS,unaligned,9,0.609356335521195,0.19204859884261
+70,70,native,ankle,Descent,Overall,phase_aligned,8,0.391488996017116,0.229486277559815
+70,70,native,ankle,Descent,Overall,unaligned,8,0.391488996017116,0.229486277559815
+70,70,native,ankle,Descent,ES,phase_aligned,8,0.296590741003682,0.308486195456865
+70,70,native,ankle,Descent,ES,unaligned,8,0.296590741003682,0.308486195456865
+70,70,native,ankle,Descent,LS,phase_aligned,8,0.781573569801114,0.0953122702656943
+70,70,native,ankle,Descent,LS,unaligned,8,0.778118948970784,0.100161265607364
+70,55,fixed,ankle,LW + Ascent,Overall,phase_aligned,9,0.499977370192687,0.0428035219818176
+70,55,fixed,ankle,LW + Ascent,Overall,unaligned,9,0.499977370192687,0.0428035219818176
+70,55,fixed,ankle,LW + Ascent,ES,phase_aligned,9,0.650502287864555,0.196730521012925
+70,55,fixed,ankle,LW + Ascent,ES,unaligned,9,0.614434994335814,0.153357966251533
+70,55,fixed,ankle,LW + Ascent,LS,phase_aligned,9,0.720362953842347,0.131352266449765
+70,55,fixed,ankle,LW + Ascent,LS,unaligned,9,0.536634187789549,0.275111009447487
+70,55,fixed,ankle,Descent,Overall,phase_aligned,8,0.391488996017116,0.229486277559815
+70,55,fixed,ankle,Descent,Overall,unaligned,8,0.391488996017116,0.229486277559815
+70,55,fixed,ankle,Descent,ES,phase_aligned,8,0.12476357713666,0.0816340552328541
+70,55,fixed,ankle,Descent,ES,unaligned,8,0.12476357713666,0.0816340552328541
+70,55,fixed,ankle,Descent,LS,phase_aligned,8,0.765847305956152,0.106242589790876
+70,55,fixed,ankle,Descent,LS,unaligned,8,0.707639662350508,0.159213784365168

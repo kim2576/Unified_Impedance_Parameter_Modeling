@@ -1,8 +1,8 @@
-function inputs = load_impedance_inputs(rbfModelFile, abReferenceFile)
+function inputs = load_impedance_inputs(rbfModelFile, abReferenceFile, options)
 %{
 Load the outputs of the biomechanics-modeling package.
 
-inputs = load_impedance_inputs(rbfModelFile, abReferenceFile)
+inputs = load_impedance_inputs(rbfModelFile, abReferenceFile, AngularVelocityVariant=...)
 
 Expected MAT-file variables:
    rbfModelFile   : RBF_model_full
@@ -10,11 +10,17 @@ Expected MAT-file variables:
 
 The returned struct deliberately preserves the upstream model structures;
 joint-specific selection is handled by select_joint_biomechanics().
+
+AngularVelocityVariant selects the modeled, preprocessed velocity surface:
+  "original" : <joint>_angle_dot_stance (default)
+  "norm"     : <joint>_angle_dot_stance_norm
+The impedance package does not differentiate joint-angle trajectories.
 %}
 
 arguments
     rbfModelFile (1,1) string
     abReferenceFile (1,1) string
+    options.AngularVelocityVariant (1,1) string {mustBeMember(options.AngularVelocityVariant,["original","norm"])} = "original"
 end
 
 if ~isfile(rbfModelFile)
@@ -41,6 +47,7 @@ end
 inputs = struct();
 inputs.RBF_model = rbfLoaded.RBF_model_full;
 inputs.AB_ref = refLoaded.target_biomechanics_total;
+inputs.angular_velocity_variant = options.AngularVelocityVariant;
 
 % Shared domains used by the current impedance-identification scripts.
 inputs.slope = linspace(-35, 35, 71);
@@ -53,4 +60,5 @@ inputs.reference_stance_phase = linspace(0, 100, 101);
 
 inputs.source.rbf_model_file = rbfModelFile;
 inputs.source.ab_reference_file = abReferenceFile;
+inputs.source.angular_velocity_variant = options.AngularVelocityVariant;
 end

@@ -1,14 +1,16 @@
 function constraints = build_late_stance_constraints( ...
     phaseFraction, P, earlyEndK, earlyEndB, slope, bounds, cfg)
 %{
-BUILD_LATE_STANCE_CONSTRAINTS Construct legacy-equivalent LS constraints.
+BUILD_LATE_STANCE_CONSTRAINTS Construct LS constraints (v2.5).
 
 Unknown vector:
   x = [K polynomial coefficients; B polynomial coefficients]
 
-Preserves the effective late-stance equality/inequality constraints from
-the legacy knee and ankle scripts. The early-stance endpoint values are
-used as the late-stance initial conditions.
+Preserves the existing late-stance equality/bound constraints and offers
+a selectable LS1 stiffness-derivative constraint:
+  "interval"  : apply K'(p) >= pre_peak_min at every LS sample <= p_K.
+  "peak_only" : original v2 behavior, at p_K only.
+The early-stance endpoint values are used as LS initial conditions.
 %}
 
 arguments
@@ -96,14 +98,27 @@ b_B_lower = -bounds.B.lower * ones(size(P,1),1);
 Aineq = [A_K_upper; A_K_lower; A_B_upper; A_B_lower];
 bineq = [b_K_upper; b_K_lower; b_B_upper; b_B_lower];
 
-% Legacy constraint labeled "increase K to LS peak" is actually evaluated
-% only at the single peak phase:
-%   K'(peak) >= cfg.LS.derivative.K.at_peak_min
-DPeak = derivativeBasis(peakPhase);
-A_K_peak_min = [-DPeak, zeros(1,nCoeff)];
-b_K_peak_min = -cfg.LS.derivative.K.at_peak_min;
+% v2.5 configurable LS1 stiffness derivative constraint (Pdot_LS1):
+%   K'(p) >= cfg.LS.derivative.K.pre_peak_min
+% "interval":  at EVERY sample from LS start through p_K (inclusive).
+% "peak_only": original v2 constraint only at p_K (for comparisons).
+% The separate LS2 upper derivative constraints below remain unchanged.
+prePeakMode = string(cfg.LS.derivative.K.pre_peak_mode);
+switch prePeakMode
+    case "interval"
+        prePeak = phaseFraction(phaseFraction <= peakPhase);
+    case "peak_only"
+        prePeak = peakPhase;
+    otherwise
+        error('build_late_stance_constraints:PrePeakMode', ...
+            'Unknown cfg.LS.derivative.K.pre_peak_mode: %s', prePeakMode);
+end
+DPre = derivativeBasis(prePeak);
+ZPre = zeros(size(DPre));
+A_K_pre_min = [-DPre, ZPre];
+b_K_pre_min = -cfg.LS.derivative.K.pre_peak_min * ones(size(DPre,1),1);
 
-% From the peak onward, preserve the legacy derivative upper limits.
+% From the peak onward, preserve the existing LS2 derivative upper limits.
 postPeak = phaseFraction(phaseFraction >= peakPhase);
 DPost = derivativeBasis(postPeak);
 ZPost = zeros(size(DPost));
@@ -114,8 +129,8 @@ b_K_post_max = cfg.LS.derivative.K.post_peak_max * ones(size(DPost,1),1);
 A_B_post_max = [ZPost, DPost];
 b_B_post_max = cfg.LS.derivative.B.post_peak_max * ones(size(DPost,1),1);
 
-Aineq = [Aineq; A_K_peak_min; A_K_post_max; A_B_post_max];
-bineq = [bineq; b_K_peak_min; b_K_post_max; b_B_post_max];
+Aineq = [Aineq; A_K_pre_min; A_K_post_max; A_B_post_max];
+bineq = [bineq; b_K_pre_min; b_K_post_max; b_B_post_max];
 
 constraints = struct();
 constraints.Aineq = Aineq;
@@ -127,6 +142,10 @@ constraints.peak_phase_fraction = peakPhase;
 constraints.peak_K_target = peakKTarget;
 constraints.K_upper = KUpper;
 constraints.B_upper = BUpper;
+constraints.pre_peak_phase = prePeak;
+constraints.pre_peak_mode = prePeakMode;
+constraints.pre_peak_K_min = cfg.LS.derivative.K.pre_peak_min;
+constraints.pre_peak_row_count = size(DPre,1);
 constraints.post_peak_phase = postPeak;
 end
 

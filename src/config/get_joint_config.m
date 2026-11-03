@@ -1,9 +1,21 @@
 function cfg = get_joint_config(joint)
 
 %{
-Effective knee/ankle settings from the legacy scripts.
-Centralizes joint-specific numerical settings used by the modular pipeline.
-Refactoring steps preserve the effective values of the legacy scripts.
+Joint-specific numerical configuration based on the latest legacy scripts,
+with the v2.5 interval-wide LS1 stiffness derivative option.
+
+FINAL ACTIVE LEGACY SETTINGS (MATLAB sample indices, 100 samples per stance):
+    Knee:  ES_end=65, LS_start=66, LS K reference at sample 76.
+    Ankle: ES_end=55, LS_start=56, push-off equilibrium ramp=15 samples,
+           terminal equilibrium reached at sample 70; LS K reference=76.
+
+DELIBERATE DEPARTURES FROM HISTORICAL LEGACY:
+    v2.5: LS1 stiffness lower derivative bound may apply to an entire interval
+          instead of only the stiffness reference sample (default=interval).
+    knee flexion_delay=0 (user removed prior value 10);
+    preprocessed RBF angular-velocity surfaces supplied by loader, not diff.
+These can change optimizer outputs; regenerate metrics and figures.
+The offline ES/LS split is NOT a commanded real-time FSM transition.
 %}
 
 arguments
@@ -17,11 +29,6 @@ cfg.joint = joint;
 cfg.polynomial.order = 4;
 cfg.polynomial.n_coefficients_per_parameter = 5;
 cfg.polynomial.n_unknowns = 10;
-
-% Numerical feasibility tolerance used to classify constrained LSQ results.
-% A positive lsqlin exit flag indicates solver convergence, but the returned
-% point can still carry small floating-point constraint residuals.
-cfg.solver.constraint_tolerance = 1e-6;
 
 % Shared slope-dependent upper-bound construction.
 cfg.bounds.K.max = 0.08;
@@ -38,8 +45,10 @@ cfg.LS.K_scale = 1.0;
 cfg.LS.derivative = struct();
 cfg.LS.derivative.K = struct();
 cfg.LS.derivative.B = struct();
-% Legacy "increase to peak" condition is evaluated only at the peak phase.
-cfg.LS.derivative.K.at_peak_min = -0.001;
+% v2.5 LS1: K'(p) >= pre_peak_min from LS start through p_K (inclusive).
+% Set pre_peak_mode="peak_only" to reproduce the v2 single-point condition.
+% The two EDITABLE JOINT-SPECIFIC values are set in the switch below.
+% No damping LS1 derivative constraint is added.
 
 % Early-stance constrained least-squares settings.
 % These are expressed as direct derivative limits for readability.
@@ -56,8 +65,8 @@ cfg.ES.derivative.B.post_peak_min = -0.001;
 
 switch joint
     case "knee"
-        cfg.phase.ES_end = 60;
-        cfg.phase.LS_start = 61;
+        cfg.phase.ES_end = 65;
+        cfg.phase.LS_start = 66;
         cfg.phase.LS_peak_target = 75;
 
         cfg.bounds.B.max = 0.004;
@@ -67,13 +76,16 @@ switch joint
         % Effective early-stance derivative constraints from the legacy knee script.
         cfg.ES.derivative.K.pre_peak_min  =  0.010;
         cfg.ES.derivative.B.post_peak_max =  0.010;
+        % TEST SETTINGS (KNEE): LS1 derivative rule; edit these two lines.
+        cfg.LS.derivative.K.pre_peak_mode = "interval"; % "peak_only" for v2
+        cfg.LS.derivative.K.pre_peak_min = -0.005;
         cfg.LS.derivative.K.post_peak_max = 0.0001;
         cfg.LS.derivative.B.post_peak_max = 0.00001;
         cfg.LS.peak_scale_mode = "descent_only";
         cfg.LS.peak_scale_cutoff_offset = 3;
 
         cfg.equilibrium.strategy = "knee";
-        cfg.equilibrium.flexion_delay = 10;
+        cfg.equilibrium.flexion_delay = 0;  % Explicit later user decision; legacy v2_2(1) used 10.
         cfg.equilibrium.moment_search_start = 40;
         cfg.equilibrium.moment_search_end = 80;
         cfg.equilibrium.descent_follow_start = 0.99;
@@ -81,8 +93,8 @@ switch joint
         cfg.equilibrium.minimum_support_angle = 0;
 
     case "ankle"
-        cfg.phase.ES_end = 60;
-        cfg.phase.LS_start = 61;
+        cfg.phase.ES_end = 55;
+        cfg.phase.LS_start = 56;
         cfg.phase.LS_peak_target = 75;
 
         cfg.bounds.B.max = 0.002;
@@ -93,6 +105,8 @@ switch joint
         cfg.ES.derivative.K.pre_peak_min  = -0.010;
         cfg.ES.derivative.B.post_peak_max =  0.005;
 
+        cfg.LS.derivative.K.pre_peak_mode = "interval"; % "peak_only" for v2
+        cfg.LS.derivative.K.pre_peak_min = -0.005;
         cfg.LS.derivative.K.post_peak_max = 0.00001;
         cfg.LS.derivative.B.post_peak_max = 0.0;
         cfg.LS.peak_scale_mode = "all";
@@ -103,7 +117,7 @@ switch joint
         cfg.equilibrium.support_start_phase = 40;
         cfg.equilibrium.support_search_end = 80;
         cfg.equilibrium.max_support_angle = 10;
-        cfg.equilibrium.push_off_duration = 15;
+        cfg.equilibrium.push_off_duration = 15;  % Legacy v2_2(1): sample 56..70.
         cfg.equilibrium.max_terminal_angle = 0;
 end
 
