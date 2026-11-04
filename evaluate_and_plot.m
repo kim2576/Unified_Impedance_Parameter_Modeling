@@ -17,8 +17,7 @@ evaluation_dir = fullfile(project_root, 'outputs', 'Evaluation');
 %   "original" : <joint>_angle_dot_stance (default, measured/preprocessed)
 %   "norm"     : <joint>_angle_dot_stance_norm (derived from averaged angles
 %                upstream, then modeled using the biomechanics package)
-% Both use the RBF surface supplied in data/RBF_models.mat. The impedance
-% package no longer calculates angular velocity using diff(joint angle).
+% Both use the RBF surface supplied in data/RBF_models.mat. 
 angular_velocity_variant = "original";
 
 inputs = load_impedance_inputs(rbf_model_file, ab_reference_file, ...
@@ -27,6 +26,7 @@ fprintf('Angular velocity input: %s (RBF-unified preprocessed velocities)\n', ..
     angular_velocity_variant);
 
 joint_metrics = struct();
+joint_results = struct();
 
 for joint = ["knee", "ankle"]
     cfg = get_joint_config(joint);
@@ -34,15 +34,7 @@ for joint = ["knee", "ankle"]
     equilibrium = build_equilibrium_angle(data, cfg);
     bounds = build_impedance_bounds(inputs.slope, cfg);
 
-    %% Explicit legacy-style arctangent upper-bound plots
-    % The bound construction itself is performed in build_impedance_bounds().
-    % Here, reconstruct and plot the fitted arctangent curves explicitly so
-    % the slope-dependent K/B envelopes are directly visible in this script.
-    %
-    % Legacy form:
-    %   y = p1 * atan(p2 * (s - p3)) + p4
-    % K uses the fitted curve directly plus its offset.
-    % B reverses the fitted curve before applying its offset.
+    %% Explicit slope-dependent arctangent upper-bound plots
 
     % ----- K upper-bound arctangent -----
     model_K = @(p, s) p(1) .* atan(p(2) .* (s - p(3))) + p(4);
@@ -65,7 +57,7 @@ for joint = ["knee", "ankle"]
     B_upper_const_mat = y_fit_B + bounds.fit.B.offset;
 
     fig_B_bound = figure( ...
-        'Name', upper(joint) + " B upper-bound arctangent", ...
+        'Name', upper(joint) + "B upper-bound arctangent", ...
         'Visible', 'on');
     plot(x_fit_B, B_upper_const_mat, 'g-', 'LineWidth', 5);
     set(gca, 'FontSize', 16);
@@ -91,24 +83,30 @@ for joint = ["knee", "ankle"]
     metrics = evaluate_impedance_fit(result);
     % Store per-slope reconstruction metrics for the Table I-style summary.
     joint_metrics.(char(joint)) = metrics;
+    joint_results.(char(joint)) = result;
 
     fprintf('\n=== %s FULL-STANCE MODEL ===\n', upper(joint));
     fprintf('Returned continuous slopes:    %d / %d\n', ...
         nnz(result.success), numel(result.success));
     fprintf('Evaluated AB-reference slopes: %d / %d\n', ...
         nnz(metrics.valid_reference_slope), numel(metrics.valid_reference_slope));
-    fprintf('Moment RMSE:                   %.5f +/- %.5f Nm/kg\n', ...
-        metrics.summary.all.rmse_total.mean, metrics.summary.all.rmse_total.std);
     fprintf('Moment MAE:                    %.5f +/- %.5f Nm/kg\n', ...
         metrics.summary.all.mae_total.mean, metrics.summary.all.mae_total.std);
-    fprintf('R^2:                           %.5f +/- %.5f\n', ...
-        metrics.summary.all.r2_total.mean, metrics.summary.all.r2_total.std);
-    fprintf('Phase-aligned ES R^2:          %.5f +/- %.5f\n', ...
-        metrics.summary.all.r2_phase_aligned_early.mean, ...
-        metrics.summary.all.r2_phase_aligned_early.std);
-    fprintf('Phase-aligned LS R^2:          %.5f +/- %.5f\n', ...
-        metrics.summary.all.r2_phase_aligned_late.mean, ...
-        metrics.summary.all.r2_phase_aligned_late.std);
+    fprintf('Peak moment MAE (all slopes): %.5f +/- %.5f Nm/kg\n', ...
+        metrics.summary.all.peak_mae.mean, metrics.summary.all.peak_mae.std);
+    fprintf('Peak moment MAE (ascent):     %.5f +/- %.5f Nm/kg\n', ...
+        metrics.summary.ascent.peak_mae.mean, metrics.summary.ascent.peak_mae.std);
+    fprintf('Peak moment MAE (descent):    %.5f +/- %.5f Nm/kg\n', ...
+        metrics.summary.descent.peak_mae.mean, metrics.summary.descent.peak_mae.std);
+    fprintf('Overall R^2:     %.5f +/- %.5f\n', ...
+        metrics.summary.all.r2_total.mean, ...
+        metrics.summary.all.r2_total.std);
+    fprintf('ES R^2:          %.5f +/- %.5f\n', ...
+        metrics.summary.all.r2_early.mean, ...
+        metrics.summary.all.r2_early.std);
+    fprintf('LS R^2:          %.5f +/- %.5f\n', ...
+        metrics.summary.all.r2_late.mean, ...
+        metrics.summary.all.r2_late.std);
 
     if any(result.success)
         fprintf('Worst ES->LS K discontinuity:  %.3e\n', ...
@@ -121,27 +119,35 @@ for joint = ["knee", "ankle"]
         fprintf('Missing solver-output slopes:  %s deg\n', mat2str(result.failed_slope));
     end
 
-    % Full-range reproduction is required to match the legacy scripts.
+    % Require an available ES/LS coefficient vector at every modeled slope.
     assert(result.full_range_available, ...
         'A solver returned no coefficient vector at one or more %s slopes.', joint);
 
-    % The plots use every returned lsqlin solution across the full slope range.
+    % Plot all returned coefficient solutions across the full slope domain.
     plot_impedance_results(result, metrics, ...
         SaveDirectory=output_dir, ...
         Visible="on");
 end
 
+% Export full-domain impedance parameters and reconstructed moments using the
+% same phase x slope orientation as RBF_model_full (101 x 71).
+impedance_model_file = fullfile(project_root, 'outputs', 'Impedance_model_full.mat');
+impedance_model_full = export_impedance_model_full( ...
+    joint_results, impedance_model_file);
+fprintf('\nSaved 101x71 impedance/reconstructed-moment surfaces to:\n  %s\n', ...
+    impedance_model_file);
+
 % Summarize six values per joint: LW + ascent / descent x overall / ES / LS.
-% Overall always uses direct squared Pearson correlation. The primary
-% table uses phase-aligned ES/LS R^2 (matching the existing evaluator's
-% reported regional metric); an unaligned companion table is also saved.
+% All reported R^2 values are  Pearson correlation squared.
 r2_summary = export_reconstruction_r2_summary(joint_metrics, ...
     SaveDirectory=evaluation_dir, ...
     VelocityVariant=angular_velocity_variant, ...
     Visible="on");
 
-fprintf('\nSaved six-column reconstruction tables to:\n  %s\n', evaluation_dir);
+peak_mae_summary = export_reconstruction_peak_mae_summary(joint_metrics, ...
+    SaveDirectory=evaluation_dir);
 
+fprintf('\nSaved  reconstruction R^2 and peak-MAE tables to:\n  %s\n', evaluation_dir);
 fprintf(['\nInspect the saved independent figures in:\n  %s\n' ...
     'Do not proceed to export/controller use if the surfaces show unexpected gaps, discontinuities, or nonphysical parameter trends.\n'], ...
     output_dir);

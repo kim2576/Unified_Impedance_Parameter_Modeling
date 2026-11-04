@@ -1,14 +1,15 @@
 function constraints = build_early_stance_constraints( ...
     phaseFraction, P, KUpper, BUpper, bounds, cfg)
 %{
-Construct legacy-equivalent ES constraints.
+Construct early-stance equality, bound, and shape constraints.
 
 The unknown vector is
   x = [K polynomial coefficients; B polynomial coefficients]
 with coefficients ordered from highest to lowest power.
 
-The constraints preserve the effective knee/ankle inequalities from the
-legacy scripts, but cfg stores them as readable derivative limits.
+The constraints implement the manuscript formulation: minimum impedance at
+heel contact, slope-dependent admissible bounds, and derivative limits that
+regulate impedance progression during weight acceptance and single support.
 %}
 
 arguments
@@ -25,7 +26,7 @@ nCoeff = cfg.polynomial.n_coefficients_per_parameter;
 
 if order ~= 4 || nCoeff ~= 5
     error('build_early_stance_constraints:UnsupportedPolynomial', ...
-        ['Step 4 preserves the current fourth-order legacy formulation. ' ...
+        ['The stance parameterization uses fourth-order K and B polynomials. ' ...
          'Expected order=4 and five coefficients per parameter.']);
 end
 if size(P,1) ~= numel(phaseFraction) || size(P,2) ~= nCoeff

@@ -3,13 +3,11 @@ function bounds = build_impedance_bounds(slope, cfg)
 Construct slope-dependent K/B constraints.
 bounds = build_impedance_bounds(slope, cfg)
 
-This function extracts the arctangent bound construction used by the
-legacy knee and ankle impedance-parameterization scripts. The numerical
-formulation is intentionally preserved:
-  - K upper bound increases from steep descent to steep ascent.
-  - B upper bound uses the same fitted arctangent and is then reversed so
-    that it decreases from steep descent to steep ascent.
-  - K/B lower bounds are slope-independent constants from cfg.
+The slope-dependent upper envelopes follow the formulation described in
+the manuscript: stiffness increases with terrain slope to accommodate greater
+support demands during ascent, while damping decreases with terrain slope to
+allow greater energy dissipation during descent. Constant lower bounds define
+the minimum admissible impedance and the heel-contact initialization values.
 
 Inputs
   slope : terrain-slope vector [deg]
@@ -24,7 +22,7 @@ Outputs
   bounds.B.upper_min   scalar
   bounds.fit.K.params  arctangent fit parameters
   bounds.fit.B.params  arctangent fit parameters
-  bounds.fit.*.anchors fit anchor values used by the legacy formulation
+  bounds.fit.*.anchors reference values used to fit each arctangent envelope
 %}
 
 arguments
@@ -47,9 +45,8 @@ if ~any(abs(slope) < 1e-12)
         'Slope vector must include level walking (0 deg).');
 end
 
-% The legacy scripts used [-35, 0, 35]. Using the actual endpoints keeps
-% the same behavior for the current domain while avoiding a hidden fixed
-% range in the reusable function.
+% Fit the arctangent envelopes through the steep-descent, level-walking,
+% and steep-ascent reference values over the configured terrain domain.
 
 anchorSlope = [slope(1), 0, slope(end)];
 
@@ -83,7 +80,7 @@ end
 
 function [upperBound, fitInfo] = fitSlopeBound( ...
     evaluationSlope, anchorSlope, upperMin, upperMax, reverseTrend)
-% Preserve the legacy arctangent parameterization and initialization.
+% Four-parameter arctangent model used for the slope-dependent upper envelope.
 
 anchorValue = [ ...
     upperMin, ...
@@ -108,10 +105,8 @@ fitted = model(params, evaluationSlope);
 
 if reverseTrend
 
-    % Exact legacy damping construction:
-    %   y_fit_B = -model_B(...)
-    %   offset = B_upper_min - min(y_fit_B)
-    %   B_upper = y_fit_B + offset
+    % Reverse the fitted arctangent so B_max(s) decreases with slope, then
+    % shift it so the minimum value equals the configured upper-envelope minimum.
     
     fitted = -fitted;
     offset = upperMin - min(fitted);

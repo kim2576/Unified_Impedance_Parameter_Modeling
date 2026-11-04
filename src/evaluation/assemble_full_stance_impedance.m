@@ -6,9 +6,9 @@ The returned surfaces follow the package convention:
   rows    = terrain slope
   columns = normalized stance phase
 
-Legacy-compatible assembly: every nonempty ES/LS solver result is retained.
-Strict convergence/constraint feasibility is stored separately as a diagnostic
-and does not remove slopes from the continuous terrain surface.
+Every slope with nonempty ES and LS coefficient vectors is assembled into the
+continuous terrain surface. Solver convergence and constraint feasibility are
+stored separately as diagnostics.
 %}
 
 arguments
@@ -68,9 +68,8 @@ else
     result.strict_failed_slope = result.failed_slope;
 end
 
-% Only a genuinely missing solver output is invalidated. A returned solution
-% with a nonpositive exitflag or diagnostic constraint residual is preserved,
-% exactly as in the legacy scripts.
+% Invalidate only slopes where an ES or LS coefficient vector is unavailable.
+% Solver-status and constraint-residual diagnostics do not alter the assembled values.
 missing = ~result.success;
 result.K(missing,:) = NaN;
 result.B(missing,:) = NaN;

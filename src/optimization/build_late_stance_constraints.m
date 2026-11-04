@@ -1,16 +1,16 @@
 function constraints = build_late_stance_constraints( ...
     phaseFraction, P, earlyEndK, earlyEndB, slope, bounds, cfg)
 %{
-BUILD_LATE_STANCE_CONSTRAINTS Construct LS constraints (v2.5).
+Construct late-stance constraints.
 
 Unknown vector:
   x = [K polynomial coefficients; B polynomial coefficients]
 
-Preserves the existing late-stance equality/bound constraints and offers
-a selectable LS1 stiffness-derivative constraint:
-  "interval"  : apply K'(p) >= pre_peak_min at every LS sample <= p_K.
-  "peak_only" : original v2 behavior, at p_K only.
-The early-stance endpoint values are used as LS initial conditions.
+The terminal early-stance K and B values initialize late stance. Equality
+constraints preserve support-level impedance through the configured stiffness
+reference phase p_K and return K and B toward their minimum values at toe-off.
+The LS1 stiffness-derivative constraint can be applied over the complete
+LS-start-to-p_K interval ("interval") or at p_K only ("peak_only").
 %}
 
 arguments
@@ -28,7 +28,7 @@ nCoeff = cfg.polynomial.n_coefficients_per_parameter;
 
 if order ~= 4 || nCoeff ~= 5
     error('build_late_stance_constraints:UnsupportedPolynomial', ...
-        ['Step 5 preserves the current fourth-order legacy formulation. ' ...
+        ['The stance parameterization uses fourth-order K and B polynomials. ' ...
          'Expected order=4 and five coefficients per parameter.']);
 end
 if size(P,1) ~= numel(phaseFraction) || size(P,2) ~= nCoeff
@@ -36,10 +36,8 @@ if size(P,1) ~= numel(phaseFraction) || size(P,2) ~= nCoeff
         'Polynomial basis size is inconsistent with phase/configuration.');
 end
 
-% Legacy peak index:
-%   p_LS_peak = stance_phase(LS_start + LS_scale_duration) / 100
-% Because phaseFraction begins at LS_start, the corresponding relative index
-% is scale_duration + 1. This intentionally preserves the legacy indexing.
+% Locate the LS stiffness-reference phase p_K. Because phaseFraction begins
+% at LS_start, its relative index is scale_duration + 1.
 peakRelativeIndex = cfg.LS.scale_duration + 1;
 if peakRelativeIndex ~= round(peakRelativeIndex) || ...
         peakRelativeIndex < 1 || peakRelativeIndex > numel(phaseFraction)
@@ -80,8 +78,8 @@ end
 Aeq = [Aeq; AeqPeak];
 beq = [beq; peakKTarget];
 
-% Pointwise LS upper/lower bounds. The legacy scripts use the ES endpoint
-% as the LS K/B upper limit (K additionally scaled by K_scale).
+% Pointwise LS bounds. The terminal ES values define the support-level upper
+% limits carried into LS; stiffness may additionally be scaled by K_scale.
 KUpper = cfg.LS.K_scale * earlyEndK;
 BUpper = earlyEndB;
 
@@ -98,11 +96,11 @@ b_B_lower = -bounds.B.lower * ones(size(P,1),1);
 Aineq = [A_K_upper; A_K_lower; A_B_upper; A_B_lower];
 bineq = [b_K_upper; b_K_lower; b_B_upper; b_B_lower];
 
-% v2.5 configurable LS1 stiffness derivative constraint (Pdot_LS1):
+% LS1 stiffness derivative constraint:
 %   K'(p) >= cfg.LS.derivative.K.pre_peak_min
-% "interval":  at EVERY sample from LS start through p_K (inclusive).
-% "peak_only": original v2 constraint only at p_K (for comparisons).
-% The separate LS2 upper derivative constraints below remain unchanged.
+% "interval" applies the lower derivative bound throughout LS1 (LS start to p_K).
+% "peak_only" applies the same bound only at p_K. LS2 derivative limits below
+% regulate constant-or-decreasing impedance during unloading.
 prePeakMode = string(cfg.LS.derivative.K.pre_peak_mode);
 switch prePeakMode
     case "interval"
@@ -118,7 +116,7 @@ ZPre = zeros(size(DPre));
 A_K_pre_min = [-DPre, ZPre];
 b_K_pre_min = -cfg.LS.derivative.K.pre_peak_min * ones(size(DPre,1),1);
 
-% From the peak onward, preserve the existing LS2 derivative upper limits.
+% From p_K to toe-off, upper derivative limits regulate unloading behavior.
 postPeak = phaseFraction(phaseFraction >= peakPhase);
 DPost = derivativeBasis(postPeak);
 ZPost = zeros(size(DPost));

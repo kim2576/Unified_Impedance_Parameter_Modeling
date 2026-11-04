@@ -49,7 +49,7 @@ inputs.RBF_model = rbfLoaded.RBF_model_full;
 inputs.AB_ref = refLoaded.target_biomechanics_total;
 inputs.angular_velocity_variant = options.AngularVelocityVariant;
 
-% Shared domains used by the current impedance-identification scripts.
+% Unified terrain-slope and phase domains used by impedance identification.
 inputs.slope = linspace(-35, 35, 71);
 inputs.stance_phase = linspace(0, 100, 100);
 inputs.reference_slope = [ ...

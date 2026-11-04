@@ -1,16 +1,16 @@
 function result = fit_early_stance_impedance(jointData, equilibrium, bounds, cfg)
 %{
-FIT_EARLY_STANCE_IMPEDANCE Fit K(phi) and B(phi) during early stance.
+Fit K(phi) and B(phi) during early stance.
 
-This function extracts the common constrained-lsqlin early-stance stage
-from the legacy knee and ankle scripts. Joint-specific numerical settings
-are supplied through cfg; the solver implementation is shared.
+Identifies the early-stance stiffness and damping polynomial coefficients
+from RBF-unified kinematics and kinetics using constrained linear least squares.
+Joint-specific phase boundaries and shape constraints are supplied through cfg.
 
 Model:
   M = K(phi) * (theta - theta_eq) + B(phi) * theta_dot
 
-Both K(phi) and B(phi) use fourth-order polynomials in normalized stance
-phase, matching the current legacy implementation.
+Both K(phi) and B(phi) use fourth-order polynomials of normalized stance
+phase, as defined in the manuscript stance-phase parameterization.
 %}
 
 arguments
@@ -54,7 +54,7 @@ for s = 1:nSlope
     angularVelocity = jointData.angular_velocity(s, 1:ESend)';
     targetMoment = jointData.moment(s, 1:ESend)';
 
-    % Same design matrix as the legacy scripts.
+    % Regression matrix combines angle error and angular velocity with the polynomial basis.
     A = [P .* angleError, P .* angularVelocity];
 
     c = build_early_stance_constraints( ...
@@ -67,8 +67,8 @@ for s = 1:nSlope
         c.Aeq, c.beq, ...
         [], [], x0, options);
 
-    % Preserve solver status explicitly. Some legacy constraint sets can be
-    % infeasible at particular slopes; do not silently treat those as valid.
+    % Record missing solver outputs explicitly so incomplete terrain slopes
+    % can be distinguished from returned coefficient vectors.
     if isempty(x)
         result.K(s,:) = NaN;
         result.B(s,:) = NaN;
@@ -82,9 +82,8 @@ for s = 1:nSlope
         continue
     end
 
-    % Legacy scripts use every nonempty lsqlin return, regardless of exitflag
-    % or post-hoc feasibility diagnostics. Preserve that behavior so the
-    % complete terrain-slope surface is retained.
+    % Retain every nonempty coefficient vector for surface construction.
+    % Solver convergence and constraint residuals are stored separately as diagnostics.
     result.solution_returned(s) = true;
 
     kCoeff = x(1:nCoeff);
@@ -117,9 +116,9 @@ result.rmse_by_slope = sqrt(mean((result.target_moment - result.moment).^2, 2, '
 result.rmse_mean = mean(result.rmse_by_slope, 'omitnan');
 result.rmse_std = std(result.rmse_by_slope, 'omitnan');
 
-% Diagnostics are intentionally separated from usability. The legacy scripts
-% retain every nonempty lsqlin solution and visualize the full slope range,
-% even when exitflag/constraint diagnostics are not strictly successful.
+% Solver diagnostics are stored separately from surface availability. A slope
+% is available whenever lsqlin returns a coefficient vector; convergence and
+% constraint residuals remain available for quality checks.
 constraintTolerance = cfg.solver.constraint_tolerance;
 result.solver_converged = result.exitflag > 0 & result.solution_returned;
 result.constraint_feasible = result.solution_returned & ...
@@ -127,8 +126,8 @@ result.constraint_feasible = result.solution_returned & ...
     result.max_equality_residual <= constraintTolerance;
 result.strict_success = result.solver_converged & result.constraint_feasible;
 
-% Backward-compatible public status now means: MATLAB returned a coefficient
-% vector that can be used, which matches the behavior of the legacy scripts.
+% Public availability status: MATLAB returned a coefficient vector that can
+% be assembled into the continuous terrain-slope surface.
 result.success = result.solution_returned;
 result.failed_slope = result.slope(~result.solution_returned);
 result.strict_failed_slope = result.slope(~result.strict_success);

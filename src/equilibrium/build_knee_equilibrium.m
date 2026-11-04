@@ -1,6 +1,6 @@
 function equilibrium = build_knee_equilibrium(jointData, cfg)
 %{
-Reproduce the legacy knee equilibrium-angle rule.
+Construct the knee equilibrium-angle trajectory described in Section III-A.
 
 This function contains only the knee-specific equilibrium-angle policy.
 Impedance bounds and constrained least-squares fitting are handled later.
@@ -37,9 +37,9 @@ minimumSupportAngle = cfg.equilibrium.minimum_support_angle;
 validatePhaseIndices(nPhase, ES_end, LS_start, ES_weight_peak, ...
     searchStart, searchEnd, flexionDelay);
 
-% Legacy knee descent-follow vector. The original implementation creates a
-% linear sequence from the most negative slope through the descent cutoff,
-% then applies it only where slope < descentCutoff.
+% Slope-dependent proportional-following factor for descending locomotion.
+% Steeper descent makes theta_eq follow the measured knee angle more closely
+% during weight acceptance before converging to the support angle.
 cutoffIndex = find(abs(slope - descentCutoff) < 1e-12, 1, 'first');
 if isempty(cutoffIndex)
     error('build_knee_equilibrium:CutoffNotInSlopeGrid', ...
@@ -64,8 +64,8 @@ for s = 1:nSlope
     [~, minLocalIndex] = min(minWindow);
     [~, maxLocalIndex] = max(maxWindow);
 
-    % Preserve the legacy indexing exactly:
-    % minIndex = localIndex + (searchStart - 1) + flexionDelay.
+    % Select the joint angle associated with the mid-to-late stance moment
+    % minimum; flexionDelay optionally shifts the selected support reference.
     minIndex = minLocalIndex + searchStart - 1 + flexionDelay;
     maxIndex = maxLocalIndex + searchStart - 1;
 
@@ -83,16 +83,16 @@ for s = 1:nSlope
     supportAngle(s) = max(minimumSupportAngle, supportAngleRaw(s));
 
     if slope(s) < descentCutoff
-        % Legacy descent rule: follow a slope-dependent fraction of the
-        % knee angle until it would exceed the support-angle reference.
-        thresholdAngle = angle(s, minIndex); % preserve raw legacy threshold
+        % During descent, use proportional yielding until theta_eq reaches the
+        % support-angle reference, then hold the support reference.
+        thresholdAngle = angle(s, minIndex); % raw support-reference angle before lower-angle limiting
         scaledAngle = p_mat(s) .* angle(s, :);
         useScaled = scaledAngle <= thresholdAngle;
 
         thetaEq(s, :) = supportAngle(s);
         thetaEq(s, useScaled) = scaledAngle(useScaled);
     else
-        % Legacy level/ascent rule.
+        % Level walking and ascent use the three-region equilibrium-angle structure.
         thetaEq(s, 1:ES_end) = supportAngle(s);
 
         ES_scaled = linspace(angle(s,1), supportAngle(s), ES_weight_peak);

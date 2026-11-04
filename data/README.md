@@ -20,4 +20,6 @@ inputs = load_impedance_inputs( ...
 
 The variable names above are part of the expected interface and should be preserved unless `load_impedance_inputs.m` is updated accordingly.
 
-The first 100 phase samples of the selected RBF angular-velocity surface are used as-is (71 × 100 after transpose). The impedance package no longer calculates `diff(angle)` or rescales these velocities.
+The first 100 phase samples of the selected RBF angular-velocity surface are
+used directly (71 × 100 after transpose). Angular velocity therefore remains an
+independently modeled biomechanical input to the impedance regression.

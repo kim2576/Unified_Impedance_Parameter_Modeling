@@ -3,14 +3,23 @@ function metrics = evaluate_impedance_fit(result)
 Evaluate reconstructed moment at experimental slopes.
 
 Metrics are computed against the discrete AB reference moments at the
-available reference slopes. The final reference sample (101st) is omitted
-to match the 100-sample impedance surfaces, preserving the legacy scripts.
+available reference slopes. The final reference sample (101st) is omitted so the AB references match
+the 100-sample internal impedance surfaces used during optimization.
 
-Returned metrics include per-slope and summary values for:
-  R^2                    full stance, ES, LS
-  phase-aligned R^2      ES, LS (legacy cross-correlation compensation)
-  RMSE                   full stance, ES, LS
-  MAE                    full stance, ES, LS
+Returned trajectory metrics include per-slope and summary values for:
+  Pearson r^2   full stance, ES, LS
+  MAE           full stance, ES, LS
+
+Phase alignment is obtained independently for each comparison interval by
+maximizing normalized cross-correlation, circularly shifting the predicted
+trajectory by the resulting lag, and then computing Pearson correlation
+squared.
+
+Peak-vs-peak evaluation compares the positive maximum reconstructed and AB
+moments at each reference slope. To match the experimental-comparison
+analysis, level/ascent peaks use the full stance phase and descent peaks use
+samples 40:100 (approximately 40-100% stance). Peak absolute errors are then
+summarized as MAE across slopes.
 %}
 
 arguments
@@ -57,16 +66,19 @@ metrics.model_moment = modelMoment;
 metrics.r2.total = NaN(1,nRef);
 metrics.r2.early = NaN(1,nRef);
 metrics.r2.late = NaN(1,nRef);
-metrics.r2_phase_aligned.early = NaN(1,nRef);
-metrics.r2_phase_aligned.late = NaN(1,nRef);
-metrics.rmse.total = NaN(1,nRef);
-metrics.rmse.early = NaN(1,nRef);
-metrics.rmse.late = NaN(1,nRef);
 metrics.mae.total = NaN(1,nRef);
 metrics.mae.early = NaN(1,nRef);
 metrics.mae.late = NaN(1,nRef);
+metrics.phase_shift_samples.total = NaN(1,nRef);
 metrics.phase_shift_samples.early = NaN(1,nRef);
 metrics.phase_shift_samples.late = NaN(1,nRef);
+
+% Peak-vs-peak metrics at each AB-reference slope.
+metrics.peak.reference = NaN(1,nRef);
+metrics.peak.model = NaN(1,nRef);
+metrics.peak.abs_error = NaN(1,nRef);
+metrics.peak.window_start_sample = NaN(1,nRef);
+metrics.peak.window_label = strings(1,nRef);
 
 for i = 1:nRef
     if ~validReference(i)
@@ -76,32 +88,44 @@ for i = 1:nRef
     ref = refMoment(i,:);
     pred = modelMoment(i,:);
 
-    metrics.r2.total(i) = squaredCorrelation(ref, pred);
-    metrics.r2.early(i) = squaredCorrelation(ref(ESidx), pred(ESidx));
-    metrics.r2.late(i) = squaredCorrelation(ref(LSidx), pred(LSidx));
-
-    [metrics.r2_phase_aligned.early(i), metrics.phase_shift_samples.early(i)] = ...
+    [metrics.r2.total(i), metrics.phase_shift_samples.total(i)] = ...
+        phaseAlignedR2(ref, pred);
+    [metrics.r2.early(i), metrics.phase_shift_samples.early(i)] = ...
         phaseAlignedR2(ref(ESidx), pred(ESidx));
-    [metrics.r2_phase_aligned.late(i), metrics.phase_shift_samples.late(i)] = ...
+    [metrics.r2.late(i), metrics.phase_shift_samples.late(i)] = ...
         phaseAlignedR2(ref(LSidx), pred(LSidx));
-
-    metrics.rmse.total(i) = sqrt(mean((ref - pred).^2, 'omitnan'));
-    metrics.rmse.early(i) = sqrt(mean((ref(ESidx) - pred(ESidx)).^2, 'omitnan'));
-    metrics.rmse.late(i) = sqrt(mean((ref(LSidx) - pred(LSidx)).^2, 'omitnan'));
 
     metrics.mae.total(i) = mean(abs(ref - pred), 'omitnan');
     metrics.mae.early(i) = mean(abs(ref(ESidx) - pred(ESidx)), 'omitnan');
     metrics.mae.late(i) = mean(abs(ref(LSidx) - pred(LSidx)), 'omitnan');
+
+    % Peak definition matched to the experimental peak-vs-peak analysis:
+    % full stance for level/ascent, late stance (sample 40 onward) for descent.
+    if refSlope(i) < 0
+        peakIdx = 40:100;
+        metrics.peak.window_label(i) = "40-100% stance";
+    else
+        peakIdx = 1:100;
+        metrics.peak.window_label(i) = "Full stance";
+    end
+    metrics.peak.window_start_sample(i) = peakIdx(1);
+
+    refPeak = max(ref(peakIdx), [], 'omitnan');
+    modelPeak = max(pred(peakIdx), [], 'omitnan');
+    metrics.peak.reference(i) = refPeak;
+    metrics.peak.model(i) = modelPeak;
+    metrics.peak.abs_error(i) = abs(modelPeak - refPeak);
 end
 
 % Preserve a clear ascent/descent split while treating level as its own row.
 metrics.groups.descent = refSlope < 0 & validReference;
 metrics.groups.level = refSlope == 0 & validReference;
 metrics.groups.ascent = refSlope > 0 & validReference;
+metrics.groups.lw_ascent = refSlope >= 0 & validReference;
 metrics.groups.all = validReference;
 
 metrics.summary = struct();
-for groupName = ["all","descent","level","ascent"]
+for groupName = ["all","descent","level","ascent","lw_ascent"]
     mask = metrics.groups.(groupName);
     metrics.summary.(groupName) = summarizeGroup(metrics, mask);
 end
@@ -113,14 +137,10 @@ summary.n_slopes = nnz(mask);
 summary.r2_total = meanStd(metrics.r2.total(mask));
 summary.r2_early = meanStd(metrics.r2.early(mask));
 summary.r2_late = meanStd(metrics.r2.late(mask));
-summary.r2_phase_aligned_early = meanStd(metrics.r2_phase_aligned.early(mask));
-summary.r2_phase_aligned_late = meanStd(metrics.r2_phase_aligned.late(mask));
-summary.rmse_total = meanStd(metrics.rmse.total(mask));
-summary.rmse_early = meanStd(metrics.rmse.early(mask));
-summary.rmse_late = meanStd(metrics.rmse.late(mask));
 summary.mae_total = meanStd(metrics.mae.total(mask));
 summary.mae_early = meanStd(metrics.mae.early(mask));
 summary.mae_late = meanStd(metrics.mae.late(mask));
+summary.peak_mae = meanStd(metrics.peak.abs_error(mask));
 end
 
 function out = meanStd(values)

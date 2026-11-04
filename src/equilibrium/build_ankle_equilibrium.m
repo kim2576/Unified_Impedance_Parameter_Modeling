@@ -1,7 +1,7 @@
 function equilibrium = build_ankle_equilibrium(jointData, cfg)
 
 %{
-Reproduce the ankle equilibrium-angle rule.
+Construct the ankle equilibrium-angle trajectory described in Section III-A.
 This function contains only the ankle-specific equilibrium-angle policy.
 Impedance bounds and constrained least-squares fitting are handled later.
 %}
@@ -58,8 +58,8 @@ for s = 1:nSlope
     supportAngleRaw(s) = angle(s, minIndex);
     supportAngle(s) = min(maxSupportAngle, supportAngleRaw(s));
 
-    % Preserve the legacy use of the second swing-phase sample as the
-    % terminal stance equilibrium target, capped at maxTerminalAngle.
+    % Terminal stance equilibrium target used to prepare ankle push-off and
+    % swing; maxTerminalAngle limits the final equilibrium reference.
     terminalAngle(s) = min(swingAngle(s, 2), maxTerminalAngle);
 
     thetaEq(s, :) = supportAngle(s);
@@ -69,7 +69,7 @@ for s = 1:nSlope
             followGain .* (angle(s,1:ES_end) - supportAngle(s)) ...
             + supportAngle(s);
 
-        % Legacy saturation: equilibrium angle cannot exceed supportAngle.
+        % Limit theta_eq to the support-angle reference during proportional yielding.
         thetaEq(s, :) = min(thetaEq(s, :), supportAngle(s));
     else
         ES_scaled = linspace(angle(s,1), supportAngle(s), ES_weight_peak);
@@ -78,7 +78,7 @@ for s = 1:nSlope
 
     LS_scaled = linspace(supportAngle(s), terminalAngle(s), pushOffDuration);
     nHold = nPhase - pushOffDuration - ES_end;
-    LS_scaled = [LS_scaled, repmat(terminalAngle(s), 1, nHold)]; %#ok<AGROW>
+    LS_scaled = [LS_scaled, repmat(terminalAngle(s), 1, nHold)];
     thetaEq(s, LS_start:end) = LS_scaled;
 end
 

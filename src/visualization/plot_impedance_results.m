@@ -8,10 +8,9 @@ Creates four independent figures for each joint:
   3) damping B with the slope-dependent arctangent upper bound
   4) equilibrium angle theta_eq
 
-Figure size and camera view reproduce the corresponding legacy scripts.
+Figure geometry and camera views are selected for consistent knee/ankle surface visualization.
 
-Returned lsqlin solutions are shown across the full slope range. Only a truly
-missing solver return appears as a gap.
+Returned lsqlin solutions are shown across the full slope range.
 %}
 
 arguments
@@ -25,7 +24,7 @@ jointLabel = upperFirst(result.joint);
 phase = result.phase;
 slope = result.slope;
 
-% Legacy figure geometry / camera settings.
+% Joint-specific figure geometry and camera views.
 if result.joint == "knee"
     momentPosition = [100 100 1000 500];
     momentView = [35 35];
@@ -71,9 +70,9 @@ surf(ax, slope, phase, result.moment', ...
 xlabel(ax,'Terrain slope (deg)');
 ylabel(ax,'Stance phase (%)');
 zlabel(ax,'Moment (Nm/kg)');
-title(ax, sprintf('%s reconstructed moment | RMSE %.3f +/- %.3f Nm/kg', ...
-    jointLabel, metrics.summary.all.rmse_total.mean, ...
-    metrics.summary.all.rmse_total.std));
+title(ax, sprintf('%s reconstructed moment | MAE %.3f +/- %.3f Nm/kg', ...
+    jointLabel, metrics.summary.all.mae_total.mean, ...
+    metrics.summary.all.mae_total.std));
 set(ax,'FontSize',20);
 grid(ax,'off');
 view(ax,momentView(1),momentView(2));
@@ -90,7 +89,7 @@ surf(ax, slope, phase, result.K', ...
     'EdgeAlpha',0.5);
 hold(ax,'on');
 
-% Legacy arctangent upper-bound representation at 50% stance.
+% Slope-dependent arctangent upper envelope shown at 50% stance.
 plot3(ax, ...
     slope, ...
     50 * ones(size(slope)), ...
@@ -118,7 +117,7 @@ surf(ax, slope, phase, result.B', ...
     'EdgeAlpha',0.5);
 hold(ax,'on');
 
-% Legacy arctangent upper-bound representation at 50% stance.
+% Slope-dependent arctangent upper envelope shown at 50% stance.
 plot3(ax, ...
     slope, ...
     50 * ones(size(slope)), ...
