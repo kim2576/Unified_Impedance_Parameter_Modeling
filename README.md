@@ -58,7 +58,7 @@ data/
 
 `RBF_models.mat` must contain `RBF_model_full`, and `AB_refs.mat` must contain `target_biomechanics_total`.
 
-The required stance angular-velocity fields are:
+The stance angular-velocity fields used by this package are:
 
 ```text
 knee_angle_dot_stance
@@ -66,6 +66,8 @@ ankle_angle_dot_stance
 knee_angle_dot_stance_norm
 ankle_angle_dot_stance_norm
 ```
+
+Only the pair selected by `angular_velocity_variant` is required for a given run (`original` or `norm`).
 
 Each RBF surface is expected in phase × slope orientation (101 × 71). The optimizer uses the first 100 stance samples internally and transposes them to slope × phase orientation (71 × 100).
 
@@ -147,7 +149,146 @@ Joint-specific settings are centralized in `src/config/get_joint_config.m`.
 | `equilibrium.max_terminal_angle` | Upper limit on the terminal ankle equilibrium-angle reference. |
 | `solver.constraint_tolerance` | Numerical tolerance used only to report constraint-feasibility diagnostics. |
 
-The public configuration uses joint-specific ES/LS phase boundaries and derivative limits listed in the manuscript Appendix B/Table A1.
+The default configuration uses the joint-specific ES/LS phase boundaries and derivative limits listed in the manuscript Appendix B/Table A1.
+
+## Experimenting with the configuration
+
+`src/config/get_joint_config.m` is intended to make the main design choices easy to inspect and modify. The values in the default configuration reproduce the parameterization used in the manuscript; changes below are examples for sensitivity checks or controller-design exploration.
+
+A useful workflow is:
+
+1. run the default configuration once with `evaluate_and_plot`;
+2. save or rename the generated `outputs/` directory;
+3. change one parameter at a time in `get_joint_config.m`;
+4. rerun `evaluate_and_plot`; and
+5. compare the impedance surfaces, reconstructed moments, MAE/peak-MAE tables, and phase-aligned Pearson r².
+
+For example, after a baseline run:
+
+```matlab
+evaluate_and_plot
+movefile("outputs", "outputs_baseline")
+```
+
+edit one configuration value, then run again:
+
+```matlab
+evaluate_and_plot
+```
+
+The new results will be written to a fresh `outputs/` directory.
+
+### Example 1 — ankle support-angle limit
+
+Default:
+
+```matlab
+cfg.equilibrium.max_support_angle = 10;
+```
+
+Trial:
+
+```matlab
+cfg.equilibrium.max_support_angle = 8;
+```
+
+This tests a more restrictive dorsiflexion support reference. Inspect:
+
+```text
+outputs/Plots/ankle_equilibrium_angle.png
+outputs/Plots/ankle_reconstructed_moment.png
+outputs/Evaluation/reconstruction_peak_mae_summary.csv
+outputs/Evaluation/reconstruction_r2_summary.csv
+```
+
+### Example 2 — ankle proportional yielding
+
+Default:
+
+```matlab
+cfg.equilibrium.follow_gain = 1.1;
+```
+
+Trial:
+
+```matlab
+cfg.equilibrium.follow_gain = 1.0;
+```
+
+`follow_gain` controls the proportional relation between the measured ankle angle and the support reference during R1 yielding. A value of `1.0` makes the prescribed equilibrium angle follow the measured ankle angle directly in that relation, while the default `1.1` introduces a larger offset relative to the support reference. Compare the early-stance equilibrium-angle and reconstructed-moment surfaces.
+
+### Example 3 — stiffness upper envelope
+
+Default:
+
+```matlab
+cfg.bounds.K.max = 0.08;
+```
+
+Trial:
+
+```matlab
+cfg.bounds.K.max = 0.07;
+```
+
+This lowers the maximum value available to the slope-dependent stiffness envelope. Compare:
+
+```text
+outputs/Plots/knee_stiffness_K.png
+outputs/Plots/ankle_stiffness_K.png
+outputs/Plots/knee_K_upper_bound_arctan.png
+outputs/Plots/ankle_K_upper_bound_arctan.png
+```
+
+and check whether reconstruction MAE or phase-aligned r² changes at the steeper slopes.
+
+### Example 4 — late-stance stiffness-shape constraint
+
+For either joint, change:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_min = -0.005;
+```
+
+to a tighter value such as:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_min = -0.001;
+```
+
+This more strongly limits how quickly stiffness can decrease between LS onset and the stiffness-reference phase `p_K`. Compare the resulting stiffness plateau and reconstructed moment before unloading.
+
+The constraint can also be localized to the reference phase by changing:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_mode = "interval";
+```
+
+to:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_mode = "peak_only";
+```
+
+### Example 5 — ES/LS optimization boundary
+
+The ES and LS phase boundaries must remain consecutive. For example, a knee sensitivity test could change:
+
+```matlab
+cfg.phase.ES_end = 65;
+cfg.phase.LS_start = 66;
+```
+
+to:
+
+```matlab
+cfg.phase.ES_end = 60;
+cfg.phase.LS_start = 61;
+```
+
+`cfg.LS.scale_duration` is derived automatically from `ES_end` and `LS_peak_target`. This test changes the offline ES/LS optimization partition; it does **not** change the real-time FSM transition rule.
+
+When testing alternative configurations, inspect the console continuity diagnostics and the generated surfaces before using the parameters in controller experiments.
 
 ## Evaluation
 
@@ -155,12 +296,12 @@ The public configuration uses joint-specific ES/LS phase boundaries and derivati
 
 ### Trajectory metrics
 
-The public evaluator reports:
+The evaluator reports:
 
 - **MAE** for full stance, ES, and LS;
 - **phase-aligned Pearson r²** for full stance, ES, and LS.
 
-Each comparison interval is phase-aligned independently using normalized cross-correlation before Pearson correlation is calculated. No nonaligned reconstruction r² summary is generated.
+Each comparison interval is phase-aligned independently using normalized cross-correlation before Pearson correlation is calculated.
 
 ### Peak moment MAE
 
@@ -222,8 +363,7 @@ The arctangent upper-envelope curves are also generated as standalone 2-D plots.
 │   ├── AB_refs.mat
 │   ├── RBF_models.mat
 │   └── README.md
-├── docs/
-├── outputs/
+├── outputs/                     # generated when evaluate_and_plot is run
 └── src/
     ├── bounds/
     ├── config/
