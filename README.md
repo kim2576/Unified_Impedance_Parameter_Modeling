@@ -158,9 +158,9 @@ The public configuration uses joint-specific ES/LS phase boundaries and derivati
 The public evaluator reports:
 
 - **MAE** for full stance, ES, and LS;
-- **phase-aligned Pearson r²** for full stance, ES, and LS.
+- **phase-ed Pearson r²** for full stance, ES, and LS.
 
-Each comparison interval is phase-aligned independently using normalized cross-correlation before Pearson correlation is calculated. No nonaligned reconstruction r² summary is generated.
+Each comparison interval is phase-aligned independently using normalized cross-correlation before Pearson correlation is calculated.
 
 ### Peak moment MAE
 
