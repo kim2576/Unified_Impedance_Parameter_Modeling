@@ -299,7 +299,7 @@ When testing alternative configurations, inspect the console continuity diagnost
 The evaluator reports:
 
 - **MAE** for full stance, ES, and LS;
-- **phase-aligned Pearson r²** for full stance, ES, and LS.
+- **phase-ed Pearson r²** for full stance, ES, and LS.
 
 Each comparison interval is phase-aligned independently using normalized cross-correlation before Pearson correlation is calculated.
 
