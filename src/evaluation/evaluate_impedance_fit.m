@@ -1,26 +1,6 @@
 function metrics = evaluate_impedance_fit(result)
-%{
-Evaluate reconstructed moment at experimental slopes.
-
-Metrics are computed against the discrete AB reference moments at the
-available reference slopes. The final reference sample (101st) is omitted so the AB references match
-the 100-sample internal impedance surfaces used during optimization.
-
-Returned trajectory metrics include per-slope and summary values for:
-  Pearson r^2   full stance, ES, LS
-  MAE           full stance, ES, LS
-
-Phase alignment is obtained independently for each comparison interval by
-maximizing normalized cross-correlation, circularly shifting the predicted
-trajectory by the resulting lag, and then computing Pearson correlation
-squared.
-
-Peak-vs-peak evaluation compares the positive maximum reconstructed and AB
-moments at each reference slope. To match the experimental-comparison
-analysis, level/ascent peaks use the full stance phase and descent peaks use
-samples 40:100 (approximately 40-100% stance). Peak absolute errors are then
-summarized as MAE across slopes.
-%}
+%EVALUATE_IMPEDANCE_FIT Compare reconstructed moments with AB references.
+% Trajectory r^2 is computed after phase alignment within each interval.
 
 arguments
     result (1,1) struct
@@ -73,7 +53,7 @@ metrics.phase_shift_samples.total = NaN(1,nRef);
 metrics.phase_shift_samples.early = NaN(1,nRef);
 metrics.phase_shift_samples.late = NaN(1,nRef);
 
-% Peak-vs-peak metrics at each AB-reference slope.
+% Peak metrics at each AB reference slope.
 metrics.peak.reference = NaN(1,nRef);
 metrics.peak.model = NaN(1,nRef);
 metrics.peak.abs_error = NaN(1,nRef);
@@ -99,8 +79,7 @@ for i = 1:nRef
     metrics.mae.early(i) = mean(abs(ref(ESidx) - pred(ESidx)), 'omitnan');
     metrics.mae.late(i) = mean(abs(ref(LSidx) - pred(LSidx)), 'omitnan');
 
-    % Peak definition matched to the experimental peak-vs-peak analysis:
-    % full stance for level/ascent, late stance (sample 40 onward) for descent.
+    % Peak window: full stance for level/ascent; samples 40:100 for descent.
     if refSlope(i) < 0
         peakIdx = 40:100;
         metrics.peak.window_label(i) = "40-100% stance";
@@ -117,7 +96,7 @@ for i = 1:nRef
     metrics.peak.abs_error(i) = abs(modelPeak - refPeak);
 end
 
-% Preserve a clear ascent/descent split while treating level as its own row.
+% Level is stored separately and included with ascent in summary metrics.
 metrics.groups.descent = refSlope < 0 & validReference;
 metrics.groups.level = refSlope == 0 & validReference;
 metrics.groups.ascent = refSlope > 0 & validReference;

@@ -1,29 +1,6 @@
 function bounds = build_impedance_bounds(slope, cfg)
-%{ 
-Construct slope-dependent K/B constraints.
-bounds = build_impedance_bounds(slope, cfg)
-
-The slope-dependent upper envelopes follow the formulation described in
-the manuscript: stiffness increases with terrain slope to accommodate greater
-support demands during ascent, while damping decreases with terrain slope to
-allow greater energy dissipation during descent. Constant lower bounds define
-the minimum admissible impedance and the heel-contact initialization values.
-
-Inputs
-  slope : terrain-slope vector [deg]
-  cfg   : joint configuration from get_joint_config()
-
-Outputs
-  bounds.K.upper       [1 x nSlope]
-  bounds.K.lower       scalar
-  bounds.K.upper_min   scalar
-  bounds.B.upper       [1 x nSlope]
-  bounds.B.lower       scalar
-  bounds.B.upper_min   scalar
-  bounds.fit.K.params  arctangent fit parameters
-  bounds.fit.B.params  arctangent fit parameters
-  bounds.fit.*.anchors reference values used to fit each arctangent envelope
-%}
+%BUILD_IMPEDANCE_BOUNDS Construct slope-dependent K/B limits.
+% Upper envelopes are arctangent fits through the configured terrain range.
 
 arguments
     slope (1,:) double {mustBeFinite, mustBeReal}
@@ -45,8 +22,7 @@ if ~any(abs(slope) < 1e-12)
         'Slope vector must include level walking (0 deg).');
 end
 
-% Fit the arctangent envelopes through the steep-descent, level-walking,
-% and steep-ascent reference values over the configured terrain domain.
+% Fit arctangent envelopes through descent, level, and ascent anchors.
 
 anchorSlope = [slope(1), 0, slope(end)];
 
@@ -80,7 +56,7 @@ end
 
 function [upperBound, fitInfo] = fitSlopeBound( ...
     evaluationSlope, anchorSlope, upperMin, upperMax, reverseTrend)
-% Four-parameter arctangent model used for the slope-dependent upper envelope.
+% Four-parameter arctangent envelope.
 
 anchorValue = [ ...
     upperMin, ...
@@ -105,8 +81,7 @@ fitted = model(params, evaluationSlope);
 
 if reverseTrend
 
-    % Reverse the fitted arctangent so B_max(s) decreases with slope, then
-    % shift it so the minimum value equals the configured upper-envelope minimum.
+    % Reverse B_max so damping decreases with slope.
     
     fitted = -fitted;
     offset = upperMin - min(fitted);

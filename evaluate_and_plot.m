@@ -1,6 +1,5 @@
-%{
-Parameterize impedance using predefined configuration.
-%}
+% Impedance parameterization and evaluation for knee and ankle.
+
 clear;
 close all;
 clc;
@@ -13,11 +12,8 @@ ab_reference_file = fullfile(project_root, 'data', 'AB_refs.mat');
 output_dir = fullfile(project_root, 'outputs', 'Plots');
 evaluation_dir = fullfile(project_root, 'outputs', 'Evaluation');
 
-% Select which preprocessed/RBF-unified angular-velocity trajectory to use:
-%   "original" : <joint>_angle_dot_stance (default, measured/preprocessed)
-%   "norm"     : <joint>_angle_dot_stance_norm (derived from averaged angles
-%                upstream, then modeled using the biomechanics package)
-% Both use the RBF surface supplied in data/RBF_models.mat. 
+% Select the upstream RBF angular-velocity surface.
+% "original": <joint>_angle_dot_stance; "norm": <joint>_angle_dot_stance_norm.
 angular_velocity_variant = "original";
 
 inputs = load_impedance_inputs(rbf_model_file, ab_reference_file, ...
@@ -34,9 +30,9 @@ for joint = ["knee", "ankle"]
     equilibrium = build_equilibrium_angle(data, cfg);
     bounds = build_impedance_bounds(inputs.slope, cfg);
 
-    %% Explicit slope-dependent arctangent upper-bound plots
+    %% Slope-dependent impedance bounds
 
-    % ----- K upper-bound arctangent -----
+    % K upper bound
     model_K = @(p, s) p(1) .* atan(p(2) .* (s - p(3))) + p(4);
     x_fit_K = inputs.slope;
     y_fit_K = model_K(bounds.fit.K.params, x_fit_K);
@@ -50,7 +46,7 @@ for joint = ["knee", "ankle"]
     xlim([-35 35])
     grid off;
 
-    % ----- B upper-bound arctangent -----
+    % B upper bound
     model_B = @(p, s) p(1) .* atan(p(2) .* (s - p(3))) + p(4);
     x_fit_B = inputs.slope;
     y_fit_B = -model_B(bounds.fit.B.params, x_fit_B);
@@ -81,7 +77,7 @@ for joint = ["knee", "ankle"]
     result = assemble_full_stance_impedance( ...
         data, equilibrium, bounds, early, late, cfg);
     metrics = evaluate_impedance_fit(result);
-    % Store per-slope reconstruction metrics for the Table I-style summary.
+    % Store reconstruction metrics for summary export.
     joint_metrics.(char(joint)) = metrics;
     joint_results.(char(joint)) = result;
 
@@ -119,26 +115,23 @@ for joint = ["knee", "ankle"]
         fprintf('Missing solver-output slopes:  %s deg\n', mat2str(result.failed_slope));
     end
 
-    % Require an available ES/LS coefficient vector at every modeled slope.
+    % Require ES and LS solutions over the full slope range.
     assert(result.full_range_available, ...
         'A solver returned no coefficient vector at one or more %s slopes.', joint);
 
-    % Plot all returned coefficient solutions across the full slope domain.
     plot_impedance_results(result, metrics, ...
         SaveDirectory=output_dir, ...
         Visible="on");
 end
 
-% Export full-domain impedance parameters and reconstructed moments using the
-% same phase x slope orientation as RBF_model_full (101 x 71).
+% Export full-domain surfaces in 101 x 71 phase-by-slope orientation.
 impedance_model_file = fullfile(project_root, 'outputs', 'Impedance_model_full.mat');
 impedance_model_full = export_impedance_model_full( ...
     joint_results, impedance_model_file);
 fprintf('\nSaved 101x71 impedance/reconstructed-moment surfaces to:\n  %s\n', ...
     impedance_model_file);
 
-% Summarize six values per joint: LW + ascent / descent x overall / ES / LS.
-% All reported R^2 values are  Pearson correlation squared.
+% Export phase-aligned r^2 summaries for LW+ascent and descent.
 r2_summary = export_reconstruction_r2_summary(joint_metrics, ...
     SaveDirectory=evaluation_dir, ...
     VelocityVariant=angular_velocity_variant, ...

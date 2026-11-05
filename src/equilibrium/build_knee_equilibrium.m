@@ -1,10 +1,5 @@
 function equilibrium = build_knee_equilibrium(jointData, cfg)
-%{
-Construct the knee equilibrium-angle trajectory described in Section III-A.
-
-This function contains only the knee-specific equilibrium-angle policy.
-Impedance bounds and constrained least-squares fitting are handled later.
-%}
+%BUILD_KNEE_EQUILIBRIUM Construct the knee equilibrium-angle trajectory.
 
 arguments
     jointData (1,1) struct
@@ -37,9 +32,7 @@ minimumSupportAngle = cfg.equilibrium.minimum_support_angle;
 validatePhaseIndices(nPhase, ES_end, LS_start, ES_weight_peak, ...
     searchStart, searchEnd, flexionDelay);
 
-% Slope-dependent proportional-following factor for descending locomotion.
-% Steeper descent makes theta_eq follow the measured knee angle more closely
-% during weight acceptance before converging to the support angle.
+% Descent proportional-following factor.
 cutoffIndex = find(abs(slope - descentCutoff) < 1e-12, 1, 'first');
 if isempty(cutoffIndex)
     error('build_knee_equilibrium:CutoffNotInSlopeGrid', ...
@@ -64,8 +57,7 @@ for s = 1:nSlope
     [~, minLocalIndex] = min(minWindow);
     [~, maxLocalIndex] = max(maxWindow);
 
-    % Select the joint angle associated with the mid-to-late stance moment
-    % minimum; flexionDelay optionally shifts the selected support reference.
+    % Support angle from the mid-to-late stance moment minimum.
     minIndex = minLocalIndex + searchStart - 1 + flexionDelay;
     maxIndex = maxLocalIndex + searchStart - 1;
 
@@ -83,8 +75,7 @@ for s = 1:nSlope
     supportAngle(s) = max(minimumSupportAngle, supportAngleRaw(s));
 
     if slope(s) < descentCutoff
-        % During descent, use proportional yielding until theta_eq reaches the
-        % support-angle reference, then hold the support reference.
+        % Descent: proportional yielding followed by support hold.
         thresholdAngle = angle(s, minIndex); % raw support-reference angle before lower-angle limiting
         scaledAngle = p_mat(s) .* angle(s, :);
         useScaled = scaledAngle <= thresholdAngle;
@@ -92,7 +83,7 @@ for s = 1:nSlope
         thetaEq(s, :) = supportAngle(s);
         thetaEq(s, useScaled) = scaledAngle(useScaled);
     else
-        % Level walking and ascent use the three-region equilibrium-angle structure.
+        % Level walking/ascent: three-region trajectory.
         thetaEq(s, 1:ES_end) = supportAngle(s);
 
         ES_scaled = linspace(angle(s,1), supportAngle(s), ES_weight_peak);
@@ -134,6 +125,6 @@ if searchStart < 1 || searchEnd > nPhase || searchStart > searchEnd
         'Invalid knee moment search window.');
 end
 if searchEnd - searchStart + 1 + searchStart - 1 + flexionDelay > nPhase + flexionDelay
-    % Kept intentionally light; the actual selected minimum is checked above.
+    % The selected support index is checked inside the loop.
 end
 end

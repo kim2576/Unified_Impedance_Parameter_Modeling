@@ -1,19 +1,6 @@
 function jointData = select_joint_biomechanics(inputs, joint)
-%{
-Standardize knee/ankle RBF inputs for impedance fitting.
-
-Output orientation used by the impedance optimizer:
-  rows    = terrain slopes (71)
-  columns = normalized stance-phase samples (100)
-
-jointData contains:
-  angle             [71 x 100] deg
-  angular_velocity  [71 x 100] deg/s (selected preprocessed RBF field)
-  moment            [71 x 100] Nm/kg
-  swing_angle       [71 x 100] deg
-  reference_moment  [17 x 101] Nm/kg
-  angular_velocity_field  Source RBF field name
-%}
+%SELECT_JOINT_BIOMECHANICS Arrange one joint for impedance fitting.
+% Internal orientation is slope x stance phase (71 x 100).
 
 arguments
     inputs (1,1) struct
@@ -52,14 +39,11 @@ if ~isfield(inputs.AB_ref, refMomentField)
         'Missing AB reference field: %s', refMomentField);
 end
 
-% Use the first 100 stance samples and transpose to slope-by-phase form.
+% First 100 stance samples, slope-by-phase.
 angle = inputs.RBF_model.(angleField).RBF_in_full_domain(1:100, :)';
 moment = inputs.RBF_model.(momentField).RBF_in_full_domain(1:100, :)';
 
-% Angular velocity is an independently modeled RBF surface, constructed
-% upstream from the preprocessed velocity measurements (or '_norm' inputs).
-% Keep the established first-100-sample selection used by angle and moment.
-% Do NOT recompute it by differentiating the fitted joint-angle surface.
+% Angular velocity is loaded directly from the upstream RBF model.
 angularVelocity = inputs.RBF_model.(velocityField).RBF_in_full_domain(1:100, :)';
 
 jointData = struct();

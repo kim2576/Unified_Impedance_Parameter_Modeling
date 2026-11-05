@@ -1,23 +1,5 @@
 function impedance_model_full = export_impedance_model_full(jointResults, saveFile)
-%{
- Save full-domain impedance surfaces for analysis.
-
- Converts the optimizer's internal surface convention
-  71 slopes x 100 stance samples to the biomechanics-package convention
-  101 stance samples x 71 slopes.
-
- The exported MAT file contains one struct, impedance_model_full, with:
-  knee_K_stance                         [101 x 71] double
-  knee_B_stance                         [101 x 71] double
-  knee_theta_eq_stance                  [101 x 71] double
-  knee_reconstructed_moment_stance      [101 x 71] double
-  ankle_K_stance                        [101 x 71] double
-  ankle_B_stance                        [101 x 71] double
-  ankle_theta_eq_stance                 [101 x 71] double
-  ankle_reconstructed_moment_stance     [101 x 71] double
-  slope                                 [1 x 71] double
-  stance_phase                          [101 x 1] double
-%}
+%EXPORT_IMPEDANCE_MODEL_FULL Export 101 x 71 phase-by-slope surfaces.
 
 arguments
     jointResults (1,1) struct
@@ -60,7 +42,7 @@ impedance_model_full.ankle_reconstructed_moment_stance = ...
 impedance_model_full.slope = double(knee.slope(:)');
 impedance_model_full.stance_phase = double(exportPhase);
 
-% Enforce the downstream comparison format explicitly.
+% Phase-by-slope output used by downstream comparisons.
 surfaceFields = [ ...
     "knee_K_stance", ...
     "knee_B_stance", ...
@@ -89,8 +71,7 @@ save(char(saveFile), 'impedance_model_full', '-v7');
 end
 
 function exported = resampleSurface(sourcePhase, surface, exportPhase)
-% Surface input is slope x phase. interp1 operates along rows after transpose,
-% producing the desired phase x slope output directly.
+% Convert slope-by-phase input to phase-by-slope output.
 sourcePhase = double(sourcePhase(:));
 surface = double(surface);
 

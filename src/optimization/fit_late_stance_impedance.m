@@ -1,14 +1,5 @@
 function result = fit_late_stance_impedance(jointData, equilibrium, bounds, early, cfg)
-%{
-Fit K(phi) and B(phi) during late stance.
-
-Uses the terminal early-stance impedance values as late-stance boundary
-conditions and identifies the LS K/B polynomial coefficients with constrained
-linear least squares.
-
-Model:
-  M = K(phi) * (theta - theta_eq) + B(phi) * theta_dot
-%}
+%FIT_LATE_STANCE_IMPEDANCE Fit LS K/B polynomials with constrained LSQ.
 
 arguments
     jointData (1,1) struct
@@ -59,8 +50,7 @@ options = optimoptions('lsqlin', 'Display', 'off');
 x0 = zeros(cfg.polynomial.n_unknowns, 1);
 
 for s = 1:nSlope
-    % LS is initialized from the terminal ES solution; skip slopes without
-    % an available ES coefficient vector.
+    % Skip slopes without an ES solution.
     if ~earlyAvailable(s)
         continue
     end
@@ -94,7 +84,6 @@ for s = 1:nSlope
         continue
     end
 
-    % Retain every nonempty LS coefficient vector for surface construction.
     result.solution_returned(s) = true;
 
     kCoeff = x(1:nCoeff);
@@ -133,8 +122,7 @@ result.constraint_feasible = result.solution_returned & ...
     result.max_equality_residual <= constraintTolerance;
 result.strict_success = earlyAvailable & result.solver_converged & result.constraint_feasible;
 
-% Surface availability is based on returned coefficients; convergence and
-% constraint-feasibility checks remain separate diagnostics.
+% Surface availability follows returned coefficient vectors.
 result.success = earlyAvailable & result.solution_returned;
 result.failed_slope = result.slope(~result.success);
 result.strict_failed_slope = result.slope(~result.strict_success);

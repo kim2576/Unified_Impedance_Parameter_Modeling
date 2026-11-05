@@ -1,18 +1,5 @@
 function equilibrium = build_equilibrium_angle(jointData, cfg)
-%{
-Construct the joint-specific equilibrium-angle surface.
-
-equilibrium = build_equilibrium_angle(jointData, cfg)
-
-Shared output interface:
-  equilibrium.theta_eq       [nSlope x nPhase] deg
-  equilibrium.angle_error    [nSlope x nPhase] deg
-  equilibrium.support_angle  [nSlope x 1] deg
-  equilibrium.diagnostics    joint-specific diagnostics
-
-The knee and ankle algorithms intentionally remain separate. This wrapper
-only dispatches to the appropriate joint strategy and standardizes output.
-%}
+%BUILD_EQUILIBRIUM_ANGLE Dispatch the joint-specific equilibrium-angle model.
 
 arguments
     jointData (1,1) struct

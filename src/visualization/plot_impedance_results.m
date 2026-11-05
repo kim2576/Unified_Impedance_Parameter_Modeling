@@ -1,17 +1,5 @@
 function figs = plot_impedance_results(result, metrics, options)
-%{
-Plot full-stance impedance results as independent figures.
-
-Creates four independent figures for each joint:
-  1) reconstructed moment with AB reference data overlaid as red dots
-  2) stiffness K with the slope-dependent arctangent upper bound
-  3) damping B with the slope-dependent arctangent upper bound
-  4) equilibrium angle theta_eq
-
-Figure geometry and camera views are selected for consistent knee/ankle surface visualization.
-
-Returned lsqlin solutions are shown across the full slope range.
-%}
+% Plot reconstructed moment and impedance surfaces.
 
 arguments
     result (1,1) struct
@@ -24,7 +12,7 @@ jointLabel = upperFirst(result.joint);
 phase = result.phase;
 slope = result.slope;
 
-% Joint-specific figure geometry and camera views.
+% Joint-specific figure geometry.
 if result.joint == "knee"
     momentPosition = [100 100 1000 500];
     momentView = [35 35];
@@ -53,7 +41,7 @@ end
 
 figs = struct();
 
-%% 1. Reconstructed moment
+%% Reconstructed moment
 figs.moment = figure( ...
     'Name', jointLabel + " reconstructed moment", ...
     'Visible', options.Visible, ...
@@ -77,7 +65,7 @@ set(ax,'FontSize',20);
 grid(ax,'off');
 view(ax,momentView(1),momentView(2));
 
-%% 2. Stiffness K
+%% Stiffness K
 figs.K = figure( ...
     'Name', jointLabel + " stiffness K", ...
     'Visible', options.Visible, ...
@@ -89,7 +77,7 @@ surf(ax, slope, phase, result.K', ...
     'EdgeAlpha',0.5);
 hold(ax,'on');
 
-% Slope-dependent arctangent upper envelope shown at 50% stance.
+% Arctangent upper envelope at 50% stance.
 plot3(ax, ...
     slope, ...
     50 * ones(size(slope)), ...
@@ -105,7 +93,7 @@ set(ax,'FontSize',20);
 grid(ax,'off');
 view(ax,kView(1),kView(2));
 
-%% 3. Damping B
+%% Damping B
 figs.B = figure( ...
     'Name', jointLabel + " damping B", ...
     'Visible', options.Visible, ...
@@ -117,7 +105,7 @@ surf(ax, slope, phase, result.B', ...
     'EdgeAlpha',0.5);
 hold(ax,'on');
 
-% Slope-dependent arctangent upper envelope shown at 50% stance.
+% Arctangent upper envelope at 50% stance.
 plot3(ax, ...
     slope, ...
     50 * ones(size(slope)), ...
@@ -133,7 +121,7 @@ set(ax,'FontSize',20);
 grid(ax,'off');
 view(ax,bView(1),bView(2));
 
-%% 4. Equilibrium angle
+%% Equilibrium angle
 figs.equilibrium = figure( ...
     'Name', jointLabel + " equilibrium angle", ...
     'Visible', options.Visible, ...
@@ -152,7 +140,7 @@ set(ax,'FontSize',20);
 grid(ax,'off');
 view(ax,thetaView(1),thetaView(2));
 
-%% Save each figure independently
+%% Save figures
 if strlength(options.SaveDirectory) > 0
     if ~isfolder(options.SaveDirectory)
         mkdir(options.SaveDirectory);

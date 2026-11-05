@@ -1,15 +1,6 @@
 function result = assemble_full_stance_impedance(jointData, equilibrium, bounds, early, late, cfg)
-%{
-Combine ES and LS results into one model.
-
-The returned surfaces follow the package convention:
-  rows    = terrain slope
-  columns = normalized stance phase
-
-Every slope with nonempty ES and LS coefficient vectors is assembled into the
-continuous terrain surface. Solver convergence and constraint feasibility are
-stored separately as diagnostics.
-%}
+%ASSEMBLE_FULL_STANCE_IMPEDANCE Combine ES and LS solutions.
+% Output surfaces are slope x stance phase.
 
 arguments
     jointData (1,1) struct
@@ -68,8 +59,7 @@ else
     result.strict_failed_slope = result.failed_slope;
 end
 
-% Invalidate only slopes where an ES or LS coefficient vector is unavailable.
-% Solver-status and constraint-residual diagnostics do not alter the assembled values.
+% Require both ES and LS coefficient vectors.
 missing = ~result.success;
 result.K(missing,:) = NaN;
 result.B(missing,:) = NaN;
@@ -79,8 +69,7 @@ result.reference.slope = jointData.reference_slope;
 result.reference.phase = jointData.reference_phase;
 result.reference.moment = jointData.reference_moment;
 
-% ES -> LS continuity diagnostics. The first LS sample is constrained to the
-% final ES value, so these should be near numerical precision on valid rows.
+% ES-to-LS continuity diagnostics.
 result.continuity.K = NaN(nSlope,1);
 result.continuity.B = NaN(nSlope,1);
 valid = result.success;

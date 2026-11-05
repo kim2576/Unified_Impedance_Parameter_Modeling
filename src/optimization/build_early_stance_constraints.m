@@ -1,16 +1,6 @@
 function constraints = build_early_stance_constraints( ...
     phaseFraction, P, KUpper, BUpper, bounds, cfg)
-%{
-Construct early-stance equality, bound, and shape constraints.
-
-The unknown vector is
-  x = [K polynomial coefficients; B polynomial coefficients]
-with coefficients ordered from highest to lowest power.
-
-The constraints implement the manuscript formulation: minimum impedance at
-heel contact, slope-dependent admissible bounds, and derivative limits that
-regulate impedance progression during weight acceptance and single support.
-%}
+%BUILD_EARLY_STANCE_CONSTRAINTS Construct ES equality, bound, and derivative constraints.
 
 arguments
     phaseFraction (:,1) double {mustBeFinite, mustBeReal}
@@ -34,13 +24,13 @@ if size(P,1) ~= numel(phaseFraction) || size(P,2) ~= nCoeff
         'Polynomial basis size is inconsistent with phase/configuration.');
 end
 
-% Equality: K and B begin at their lower bounds at 0%% stance.
+% Heel-contact K/B lower-bound equality.
 p0 = 0;
 P0 = build_polynomial_basis(p0, order);
 Aeq = [P0, zeros(1,nCoeff); zeros(1,nCoeff), P0];
 beq = [bounds.K.lower; bounds.B.lower];
 
-% Pointwise upper/lower bounds across early stance.
+% Pointwise ES bounds.
 A_K_upper = [ P, zeros(size(P))];
 b_K_upper = KUpper * ones(size(P,1),1);
 A_K_lower = [-P, zeros(size(P))];
@@ -54,7 +44,7 @@ b_B_lower = -bounds.B.lower * ones(size(P,1),1);
 Aineq = [A_K_upper; A_K_lower; A_B_upper; A_B_lower];
 bineq = [b_K_upper; b_K_lower; b_B_upper; b_B_lower];
 
-% Derivative-shape constraints around the configured ES peak.
+% Derivative constraints around the ES reference phase.
 peak = cfg.phase.ES_weight_peak / 100;
 prePeak = phaseFraction(phaseFraction < peak);
 postPeak = phaseFraction(phaseFraction >= peak);

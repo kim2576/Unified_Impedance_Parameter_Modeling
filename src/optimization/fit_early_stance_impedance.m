@@ -1,17 +1,5 @@
 function result = fit_early_stance_impedance(jointData, equilibrium, bounds, cfg)
-%{
-Fit K(phi) and B(phi) during early stance.
-
-Identifies the early-stance stiffness and damping polynomial coefficients
-from RBF-unified kinematics and kinetics using constrained linear least squares.
-Joint-specific phase boundaries and shape constraints are supplied through cfg.
-
-Model:
-  M = K(phi) * (theta - theta_eq) + B(phi) * theta_dot
-
-Both K(phi) and B(phi) use fourth-order polynomials of normalized stance
-phase, as defined in the manuscript stance-phase parameterization.
-%}
+%FIT_EARLY_STANCE_IMPEDANCE Fit ES K/B polynomials with constrained LSQ.
 
 arguments
     jointData (1,1) struct
@@ -54,7 +42,7 @@ for s = 1:nSlope
     angularVelocity = jointData.angular_velocity(s, 1:ESend)';
     targetMoment = jointData.moment(s, 1:ESend)';
 
-    % Regression matrix combines angle error and angular velocity with the polynomial basis.
+    % Regression matrix for K/B polynomial coefficients.
     A = [P .* angleError, P .* angularVelocity];
 
     c = build_early_stance_constraints( ...
@@ -67,8 +55,7 @@ for s = 1:nSlope
         c.Aeq, c.beq, ...
         [], [], x0, options);
 
-    % Record missing solver outputs explicitly so incomplete terrain slopes
-    % can be distinguished from returned coefficient vectors.
+    % Record whether lsqlin returned coefficients.
     if isempty(x)
         result.K(s,:) = NaN;
         result.B(s,:) = NaN;
@@ -82,8 +69,6 @@ for s = 1:nSlope
         continue
     end
 
-    % Retain every nonempty coefficient vector for surface construction.
-    % Solver convergence and constraint residuals are stored separately as diagnostics.
     result.solution_returned(s) = true;
 
     kCoeff = x(1:nCoeff);
@@ -116,9 +101,7 @@ result.rmse_by_slope = sqrt(mean((result.target_moment - result.moment).^2, 2, '
 result.rmse_mean = mean(result.rmse_by_slope, 'omitnan');
 result.rmse_std = std(result.rmse_by_slope, 'omitnan');
 
-% Solver diagnostics are stored separately from surface availability. A slope
-% is available whenever lsqlin returns a coefficient vector; convergence and
-% constraint residuals remain available for quality checks.
+% Solver and feasibility diagnostics.
 constraintTolerance = cfg.solver.constraint_tolerance;
 result.solver_converged = result.exitflag > 0 & result.solution_returned;
 result.constraint_feasible = result.solution_returned & ...
@@ -126,8 +109,7 @@ result.constraint_feasible = result.solution_returned & ...
     result.max_equality_residual <= constraintTolerance;
 result.strict_success = result.solver_converged & result.constraint_feasible;
 
-% Public availability status: MATLAB returned a coefficient vector that can
-% be assembled into the continuous terrain-slope surface.
+% Surface availability follows returned coefficient vectors.
 result.success = result.solution_returned;
 result.failed_slope = result.slope(~result.solution_returned);
 result.strict_failed_slope = result.slope(~result.strict_success);

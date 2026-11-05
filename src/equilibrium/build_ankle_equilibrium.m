@@ -1,10 +1,6 @@
 function equilibrium = build_ankle_equilibrium(jointData, cfg)
 
-%{
-Construct the ankle equilibrium-angle trajectory described in Section III-A.
-This function contains only the ankle-specific equilibrium-angle policy.
-Impedance bounds and constrained least-squares fitting are handled later.
-%}
+%BUILD_ANKLE_EQUILIBRIUM Construct the ankle equilibrium-angle trajectory.
 
 arguments
     jointData (1,1) struct
@@ -58,8 +54,7 @@ for s = 1:nSlope
     supportAngleRaw(s) = angle(s, minIndex);
     supportAngle(s) = min(maxSupportAngle, supportAngleRaw(s));
 
-    % Terminal stance equilibrium target used to prepare ankle push-off and
-    % swing; maxTerminalAngle limits the final equilibrium reference.
+    % Terminal equilibrium target for push-off.
     terminalAngle(s) = min(swingAngle(s, 2), maxTerminalAngle);
 
     thetaEq(s, :) = supportAngle(s);
@@ -69,7 +64,7 @@ for s = 1:nSlope
             followGain .* (angle(s,1:ES_end) - supportAngle(s)) ...
             + supportAngle(s);
 
-        % Limit theta_eq to the support-angle reference during proportional yielding.
+        % Cap proportional yielding at the support reference.
         thetaEq(s, :) = min(thetaEq(s, :), supportAngle(s));
     else
         ES_scaled = linspace(angle(s,1), supportAngle(s), ES_weight_peak);
