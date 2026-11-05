@@ -1,6 +1,7 @@
 function figs = plot_impedance_results(result, metrics, options)
 % Plot reconstructed moment and impedance surfaces.
 
+
 arguments
     result (1,1) struct
     metrics (1,1) struct
