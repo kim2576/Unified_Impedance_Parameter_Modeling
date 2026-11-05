@@ -114,6 +114,121 @@ The main settings are centralized in `src/config/get_joint_config.m`.
 
 The default values correspond to the manuscript configuration.
 
+## Trying alternative configurations
+
+`src/config/get_joint_config.m` collects the main design choices in one place. The default values reproduce the manuscript results. For sensitivity checks, change one parameter at a time and compare the resulting impedance surfaces and reconstruction metrics with the baseline run.
+
+A simple workflow is:
+
+```matlab
+evaluate_and_plot
+movefile("outputs", "outputs_baseline")
+```
+
+Then edit one setting in `get_joint_config.m` and run:
+
+```matlab
+evaluate_and_plot
+```
+
+A new `outputs/` directory will be created.
+
+### Ankle support-angle limit
+
+Default:
+
+```matlab
+cfg.equilibrium.max_support_angle = 10;
+```
+
+Example trial:
+
+```matlab
+cfg.equilibrium.max_support_angle = 8;
+```
+
+This reduces the maximum dorsiflexion support reference. Compare the ankle equilibrium-angle and reconstructed-moment surfaces, together with the reconstruction summaries in `outputs/Evaluation/`.
+
+### Ankle proportional yielding
+
+Default:
+
+```matlab
+cfg.equilibrium.follow_gain = 1.1;
+```
+
+Example trial:
+
+```matlab
+cfg.equilibrium.follow_gain = 1.0;
+```
+
+`follow_gain` controls how the prescribed ankle equilibrium angle follows the measured ankle angle during R1 yielding. Compare the early-stance equilibrium-angle and reconstructed-moment surfaces.
+
+### Stiffness upper envelope
+
+Default:
+
+```matlab
+cfg.bounds.K.max = 0.08;
+```
+
+Example trial:
+
+```matlab
+cfg.bounds.K.max = 0.07;
+```
+
+This lowers the maximum stiffness available to the slope-dependent upper envelope. Check the stiffness surfaces, arctangent upper-bound plots, and reconstruction metrics, especially at steeper slopes.
+
+### Late-stance stiffness constraint
+
+Default:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_min = -0.005;
+```
+
+Example trial:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_min = -0.001;
+```
+
+This more strongly limits stiffness reduction between LS onset and the stiffness-reference phase `p_K`.
+
+The constraint can also be applied only at the reference phase by changing:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_mode = "interval";
+```
+
+to:
+
+```matlab
+cfg.LS.derivative.K.pre_peak_mode = "peak_only";
+```
+
+### ES/LS optimization boundary
+
+The ES and LS boundaries must remain consecutive. For example, the default knee boundary:
+
+```matlab
+cfg.phase.ES_end = 65;
+cfg.phase.LS_start = 66;
+```
+
+can be tested as:
+
+```matlab
+cfg.phase.ES_end = 60;
+cfg.phase.LS_start = 61;
+```
+
+`cfg.LS.scale_duration` is updated from `ES_end` and `LS_peak_target`. This changes the offline optimization partition, not the real-time FSM transition rule.
+
+For any alternative configuration, inspect the continuity diagnostics, impedance surfaces, reconstructed moments, MAE/peak-MAE summaries, and phase-aligned Pearson r² before using the parameters in controller experiments.
+
 ## Evaluation and outputs
 
 `evaluate_impedance_fit.m` compares reconstructed moments with the discrete AB reference trajectories. Reported metrics are:
